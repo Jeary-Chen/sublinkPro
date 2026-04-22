@@ -22,6 +22,7 @@ import CancelIcon from '@mui/icons-material/Cancel';
 import { useTaskProgress } from 'contexts/TaskProgressContext';
 
 import { getUnlockTaskResultText } from 'views/nodes/utils';
+import { withAlpha } from 'utils/colorUtils';
 
 const formatTime = (ms) => {
   if (ms < 0) return '--';
@@ -35,21 +36,88 @@ const formatTime = (ms) => {
   return `${hours}时${mins}分`;
 };
 
-const getPanelSurface = (theme, accentColor) => ({
-  backgroundColor: theme.palette.mode === 'dark' ? alpha(theme.palette.background.paper, 0.94) : theme.palette.background.paper,
-  border: `1px solid ${theme.palette.mode === 'dark' ? alpha(theme.palette.common.white, 0.08) : alpha(accentColor, 0.12)}`,
-  boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 1px 3px rgba(15, 23, 42, 0.06)',
-  transition: 'border-color 0.2s ease, box-shadow 0.2s ease',
-  '&:hover': {
-    borderColor: theme.palette.mode === 'dark' ? alpha(accentColor, 0.24) : alpha(accentColor, 0.2),
-    boxShadow: theme.palette.mode === 'dark' ? 'none' : '0 4px 12px rgba(15, 23, 42, 0.08)'
-  }
+const getReadablePrimaryTextColor = (theme, isDark) => {
+  const palette = theme.vars?.palette || theme.palette;
+  const darkText = palette.text?.dark || theme.palette.common.white;
+  return isDark ? withAlpha(darkText, 0.94) : palette.text.primary;
+};
+
+const getReadableSecondaryTextColor = (theme, isDark) => {
+  const palette = theme.vars?.palette || theme.palette;
+  const darkText = palette.text?.dark || theme.palette.common.white;
+  return isDark ? withAlpha(darkText, 0.82) : palette.text.secondary;
+};
+
+const getReadableTertiaryTextColor = (theme, isDark) => {
+  const palette = theme.vars?.palette || theme.palette;
+  const darkText = palette.text?.dark || theme.palette.common.white;
+  return isDark ? withAlpha(darkText, 0.68) : withAlpha(palette.text.primary, 0.68);
+};
+
+const getOuterPanelSurface = (theme, accentColor) => {
+  const palette = theme.vars?.palette || theme.palette;
+  const isDark = theme.palette.mode === 'dark';
+  const darkSurfaceBase = withAlpha(palette.background.default, 0.985);
+  const darkSurfaceElevated = withAlpha(palette.background.paper, 0.96);
+
+  return {
+    backgroundColor: isDark ? darkSurfaceBase : palette.background.paper,
+    backgroundImage: isDark ? `linear-gradient(180deg, ${darkSurfaceElevated} 0%, ${darkSurfaceBase} 100%)` : 'none',
+    border: `1px solid ${isDark ? withAlpha(palette.divider, 0.84) : alpha(accentColor, 0.12)}`,
+    boxShadow: isDark
+      ? `0 10px 26px ${alpha(theme.palette.common.black, 0.18)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`
+      : `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}`,
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+    '&:hover': {
+      borderColor: isDark ? alpha(accentColor, 0.24) : alpha(accentColor, 0.2),
+      boxShadow: isDark
+        ? `0 14px 32px ${alpha(theme.palette.common.black, 0.22)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.05)}`
+        : `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`
+    }
+  };
+};
+
+const getTaskCardSurface = (theme, accentColor) => {
+  const palette = theme.vars?.palette || theme.palette;
+  const isDark = theme.palette.mode === 'dark';
+  const darkPanelBase = withAlpha(palette.background.default, 0.82);
+  const darkPanelElevated = withAlpha(palette.background.paper, 0.38);
+
+  return {
+    backgroundColor: isDark ? darkPanelBase : withAlpha(palette.background.paper, 0.98),
+    backgroundImage: isDark ? `linear-gradient(180deg, ${darkPanelElevated} 0%, ${darkPanelBase} 100%)` : 'none',
+    border: `1px solid ${isDark ? withAlpha(palette.divider, 0.74) : alpha(accentColor, 0.12)}`,
+    boxShadow: isDark ? `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.03)}` : `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}`,
+    transition: 'border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease',
+    '&:hover': {
+      borderColor: isDark ? alpha(accentColor, 0.24) : alpha(accentColor, 0.2),
+      boxShadow: isDark
+        ? `0 0 0 1px ${alpha(accentColor, 0.14)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`
+        : `0 4px 12px ${alpha(theme.palette.common.black, 0.08)}`
+    }
+  };
+};
+
+const getAccentIconBox = (accentColor, isDark) => ({
+  width: 40,
+  height: 40,
+  borderRadius: 2,
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'center',
+  backgroundColor: alpha(accentColor, isDark ? 0.18 : 0.12),
+  border: `1px solid ${alpha(accentColor, isDark ? 0.3 : 0.18)}`,
+  flexShrink: 0
 });
 
 const getAccentChipSx = (theme, accentColor) => ({
-  bgcolor: alpha(accentColor, theme.palette.mode === 'dark' ? 0.18 : 0.1),
-  color: theme.palette.mode === 'dark' ? alpha('#fff', 0.92) : accentColor,
-  border: `1px solid ${alpha(accentColor, theme.palette.mode === 'dark' ? 0.3 : 0.18)}`,
+  bgcolor: alpha(accentColor, theme.palette.mode === 'dark' ? 0.18 : 0.08),
+  color:
+    theme.palette.mode === 'dark'
+      ? withAlpha((theme.vars?.palette || theme.palette).text?.dark || theme.palette.common.white, 0.92)
+      : alpha(accentColor, 0.92),
+  border: `1px solid ${alpha(accentColor, theme.palette.mode === 'dark' ? 0.3 : 0.2)}`,
+  fontWeight: 600,
   '&:hover': {
     bgcolor: alpha(accentColor, theme.palette.mode === 'dark' ? 0.24 : 0.14)
   }
@@ -60,6 +128,10 @@ const getAccentChipSx = (theme, accentColor) => ({
 const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const palette = theme.vars?.palette || theme.palette;
+  const primaryTextColor = getReadablePrimaryTextColor(theme, isDark);
+  const secondaryTextColor = getReadableSecondaryTextColor(theme, isDark);
+  const tertiaryTextColor = getReadableTertiaryTextColor(theme, isDark);
 
   // Calculate progress percentage
   const progress = useMemo(() => {
@@ -112,6 +184,16 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
   const isCancelled = task.status === 'cancelled';
   const isCancelling = task.status === 'cancelling' || isStopping;
   const isActive = !isCompleted && !isError && !isCancelled;
+  const successColor = theme.palette.success.main;
+  const errorColor = theme.palette.error.main;
+  const warningColor = theme.palette.warning.main;
+  const stateAccentColor = isCompleted
+    ? successColor
+    : isError
+      ? errorColor
+      : isCancelled || isCancelling
+        ? warningColor
+        : taskConfig.accentColor;
 
   // Calculate time info
   const timeInfo = useMemo(() => {
@@ -194,7 +276,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
     >
       <Card
         sx={{
-          ...getPanelSurface(theme, taskConfig.accentColor),
+          ...getTaskCardSurface(theme, taskConfig.accentColor),
           borderRadius: 3,
           overflow: 'hidden'
         }}
@@ -205,7 +287,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
             value={progress}
             sx={{
               height: 4,
-              backgroundColor: alpha(taskConfig.accentColor, 0.1),
+              backgroundColor: isDark ? withAlpha(palette.background.default, 0.92) : alpha(taskConfig.accentColor, 0.1),
               '& .MuiLinearProgress-bar': {
                 backgroundColor: taskConfig.accentColor
               }
@@ -216,9 +298,9 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
           <LinearProgress
             sx={{
               height: 4,
-              backgroundColor: alpha('#f59e0b', 0.1),
+              backgroundColor: isDark ? withAlpha(palette.background.default, 0.92) : alpha(warningColor, 0.1),
               '& .MuiLinearProgress-bar': {
-                backgroundColor: '#f59e0b'
+                backgroundColor: warningColor
               }
             }}
           />
@@ -228,29 +310,15 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
           <Box sx={{ display: 'flex', alignItems: 'flex-start', gap: 2 }}>
             <Box
               sx={{
-                width: 40,
-                height: 40,
-                borderRadius: 2,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: alpha(
-                  isCompleted ? '#10b981' : isError ? '#ef4444' : isCancelled || isCancelling ? '#f59e0b' : taskConfig.accentColor,
-                  isDark ? 0.18 : 0.1
-                ),
-                border: `1px solid ${alpha(
-                  isCompleted ? '#10b981' : isError ? '#ef4444' : isCancelled || isCancelling ? '#f59e0b' : taskConfig.accentColor,
-                  isDark ? 0.3 : 0.18
-                )}`,
-                flexShrink: 0
+                ...getAccentIconBox(stateAccentColor, isDark)
               }}
             >
               {isCompleted ? (
-                <CheckCircleIcon sx={{ color: '#10b981', fontSize: 22 }} />
+                <CheckCircleIcon sx={{ color: successColor, fontSize: 22 }} />
               ) : isError ? (
-                <ErrorIcon sx={{ color: '#ef4444', fontSize: 22 }} />
+                <ErrorIcon sx={{ color: errorColor, fontSize: 22 }} />
               ) : isCancelled || isCancelling ? (
-                <CancelIcon sx={{ color: '#f59e0b', fontSize: 22 }} />
+                <CancelIcon sx={{ color: warningColor, fontSize: 22 }} />
               ) : (
                 <Icon sx={{ color: taskConfig.accentColor, fontSize: 22 }} />
               )}
@@ -281,7 +349,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                     variant="subtitle2"
                     sx={{
                       fontWeight: 600,
-                      color: isDark ? '#fff' : theme.palette.text.primary,
+                      color: primaryTextColor,
                       whiteSpace: 'nowrap',
                       flexShrink: 0
                     }}
@@ -296,9 +364,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                         height: 18,
                         fontSize: '0.65rem',
                         fontWeight: 500,
-                        bgcolor: alpha(taskConfig.accentColor, 0.15),
-                        color: isDark ? alpha('#fff', 0.9) : taskConfig.accentColor,
-                        border: `1px solid ${alpha(taskConfig.accentColor, 0.2)}`,
+                        ...getAccentChipSx(theme, taskConfig.accentColor),
                         maxWidth: { xs: 80, sm: 100 },
                         '& .MuiChip-label': {
                           overflow: 'hidden',
@@ -329,13 +395,13 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                     sx={{
                       fontWeight: 600,
                       color: isCompleted
-                        ? '#10b981'
+                        ? successColor
                         : isError
-                          ? '#ef4444'
+                          ? errorColor
                           : isCancelled
-                            ? '#f59e0b'
+                            ? warningColor
                             : isCancelling
-                              ? '#f59e0b'
+                              ? warningColor
                               : taskConfig.accentColor,
                       whiteSpace: 'nowrap'
                     }}
@@ -351,9 +417,9 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                           disabled={isCancelling}
                           sx={{
                             p: 0.5,
-                            color: isCancelling ? alpha('#f59e0b', 0.5) : '#ef4444',
+                            color: isCancelling ? alpha(warningColor, 0.6) : errorColor,
                             '&:hover': {
-                              bgcolor: alpha('#ef4444', 0.08)
+                              bgcolor: alpha(errorColor, isDark ? 0.16 : 0.08)
                             }
                           }}
                         >
@@ -369,7 +435,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                 <Typography
                   variant="body2"
                   sx={{
-                    color: isDark ? alpha('#fff', 0.7) : theme.palette.text.secondary,
+                    color: secondaryTextColor,
                     fontSize: '0.8rem',
                     overflow: 'hidden',
                     textOverflow: 'ellipsis',
@@ -403,7 +469,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                   <Typography
                     variant="caption"
                     sx={{
-                      color: isDark ? alpha('#fff', 0.6) : theme.palette.text.secondary,
+                      color: secondaryTextColor,
                       fontSize: { xs: '0.7rem', sm: '0.75rem' },
                       whiteSpace: 'nowrap'
                     }}
@@ -416,7 +482,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                       <Typography
                         variant="caption"
                         sx={{
-                          color: isDark ? alpha('#fff', 0.5) : theme.palette.text.secondary,
+                          color: tertiaryTextColor,
                           fontSize: { xs: '0.65rem', sm: '0.7rem' },
                           display: 'flex',
                           alignItems: 'center',
@@ -431,7 +497,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                         <Typography
                           variant="caption"
                           sx={{
-                            color: isDark ? alpha('#fff', 0.5) : theme.palette.text.secondary,
+                            color: tertiaryTextColor,
                             fontSize: { xs: '0.65rem', sm: '0.7rem' },
                             whiteSpace: 'nowrap'
                           }}
@@ -447,7 +513,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
                   <Typography
                     variant="caption"
                     sx={{
-                      color: isDark ? alpha('#fff', 0.7) : theme.palette.text.secondary,
+                      color: secondaryTextColor,
                       fontSize: { xs: '0.7rem', sm: '0.75rem' },
                       fontWeight: 500,
                       whiteSpace: 'nowrap'
@@ -470,6 +536,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
 const TaskProgressPanel = () => {
   const theme = useTheme();
   const isDark = theme.palette.mode === 'dark';
+  const primaryTextColor = getReadablePrimaryTextColor(theme, isDark);
   const { taskList, hasActiveTasks, stopTask, isTaskStopping } = useTaskProgress();
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -484,7 +551,7 @@ const TaskProgressPanel = () => {
     <Collapse in={hasActiveTasks} unmountOnExit timeout={300}>
       <Card
         sx={{
-          ...getPanelSurface(theme, '#6366f1'),
+          ...getOuterPanelSurface(theme, '#6366f1'),
           mb: 4,
           borderRadius: 4,
           overflow: 'hidden',
@@ -503,19 +570,15 @@ const TaskProgressPanel = () => {
           <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 2 }}>
             <Box
               sx={{
+                ...getAccentIconBox('#6366f1', isDark),
                 width: 32,
                 height: 32,
-                borderRadius: 1.5,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                backgroundColor: alpha('#6366f1', isDark ? 0.18 : 0.1),
-                border: `1px solid ${alpha('#6366f1', isDark ? 0.3 : 0.18)}`
+                borderRadius: 1.5
               }}
             >
               <Typography sx={{ fontSize: '1rem' }}>⏳</Typography>
             </Box>
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+            <Typography variant="subtitle1" sx={{ fontWeight: 600, color: primaryTextColor }}>
               任务进度
             </Typography>
             <Chip

@@ -8,6 +8,7 @@ import { alpha, useTheme } from '@mui/material/styles';
 import { ReactFlow, Controls, MiniMap, useNodesState, useEdgesState, Handle, Position, getBezierPath } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
 import './ChainCanvasView.css';
+import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
 
 import PersonIcon from '@mui/icons-material/Person';
 import PublicIcon from '@mui/icons-material/Public';

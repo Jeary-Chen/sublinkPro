@@ -21,6 +21,7 @@ import Tabs from '@mui/material/Tabs';
 import Tab from '@mui/material/Tab';
 import Fade from '@mui/material/Fade';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
+import { getSurfaceTokens } from 'themes/surfaceTokens';
 import { withAlpha } from '../../../utils/colorUtils';
 
 // icons
@@ -65,14 +66,10 @@ export default function NodeTransferBox({
 }) {
   const theme = useTheme();
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const dialogSurface = isDark ? withAlpha(palette.background.default, 0.96) : palette.background.paper;
-  const dialogSurfaceGradient = isDark
-    ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.16)} 0%, ${dialogSurface} 100%)`
-    : 'none';
-  const mutedPanelSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const nestedPanelSurface = isDark ? withAlpha(palette.background.paper, 0.42) : palette.background.paper;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { palette, dialogSurface, dialogSurfaceGradient, mutedPanelSurface, nestedPanelSurface, panelBorder } = getSurfaceTokens(
+    theme,
+    isDark
+  );
   const listItemSurface = isDark ? withAlpha(palette.background.default, 0.62) : 'transparent';
   const listItemHoverSurface = isDark ? withAlpha(palette.background.paper, 0.5) : theme.palette.action.hover;
   const actionStripSurface = isDark ? withAlpha(palette.background.default, 0.9) : palette.background.paper;

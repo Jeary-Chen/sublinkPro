@@ -19,6 +19,7 @@ import DialogTitle from '@mui/material/DialogTitle';
 import DialogContent from '@mui/material/DialogContent';
 import DialogActions from '@mui/material/DialogActions';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
+import { getSurfaceTokens } from 'themes/surfaceTokens';
 
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
@@ -31,7 +32,6 @@ import FilterAltIcon from '@mui/icons-material/FilterAlt';
 import DeviceHubIcon from '@mui/icons-material/DeviceHub';
 
 import ConditionBuilder from './ConditionBuilder';
-import { withAlpha } from '../../../utils/colorUtils';
 
 /**
  * 移动端链式代理配置器
@@ -49,15 +49,8 @@ export default function MobileChainBuilder({
   templateGroups = []
 }) {
   const theme = useTheme();
-  const palette = theme.vars?.palette || theme.palette;
   const { isDark } = useResolvedColorScheme();
-  const dialogSurface = isDark ? withAlpha(palette.background.default, 0.96) : palette.background.paper;
-  const dialogSurfaceGradient = isDark
-    ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.16)} 0%, ${dialogSurface} 100%)`
-    : 'none';
-  const mutedPanelSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const nestedPanelSurface = isDark ? withAlpha(palette.background.paper, 0.42) : palette.background.paper;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { dialogSurface, dialogSurfaceGradient, mutedPanelSurface, nestedPanelSurface, panelBorder } = getSurfaceTokens(theme, isDark);
   // 编辑对话框状态
   const [proxyDialogOpen, setProxyDialogOpen] = useState(false);
   const [targetDialogOpen, setTargetDialogOpen] = useState(false);

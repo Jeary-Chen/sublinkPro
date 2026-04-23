@@ -23,6 +23,7 @@ import { useTaskProgress } from 'contexts/TaskProgressContext';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
 
 import { getUnlockTaskResultText } from 'views/nodes/utils';
+import { getReadableTextTokens, getSurfaceTokens } from 'themes/surfaceTokens';
 import { withAlpha } from 'utils/colorUtils';
 
 const formatTime = (ms) => {
@@ -37,26 +38,8 @@ const formatTime = (ms) => {
   return `${hours}时${mins}分`;
 };
 
-const getReadablePrimaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.94) : palette.text.primary;
-};
-
-const getReadableSecondaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.82) : palette.text.secondary;
-};
-
-const getReadableTertiaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.68) : withAlpha(palette.text.primary, 0.68);
-};
-
-const getOuterPanelSurface = (theme, accentColor, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
+const getOuterPanelSurface = (theme, surfaceTokens, accentColor) => {
+  const { isDark, palette } = surfaceTokens;
   const darkSurfaceBase = withAlpha(palette.background.default, 0.985);
   const darkSurfaceElevated = withAlpha(palette.background.paper, 0.96);
 
@@ -77,8 +60,8 @@ const getOuterPanelSurface = (theme, accentColor, isDark) => {
   };
 };
 
-const getTaskCardSurface = (theme, accentColor, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
+const getTaskCardSurface = (theme, surfaceTokens, accentColor) => {
+  const { isDark, palette } = surfaceTokens;
   const darkPanelBase = withAlpha(palette.background.default, 0.82);
   const darkPanelElevated = withAlpha(palette.background.paper, 0.38);
 
@@ -126,10 +109,13 @@ const getAccentChipSx = (theme, accentColor, isDark) => ({
 const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
   const theme = useTheme();
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const primaryTextColor = getReadablePrimaryTextColor(theme, isDark);
-  const secondaryTextColor = getReadableSecondaryTextColor(theme, isDark);
-  const tertiaryTextColor = getReadableTertiaryTextColor(theme, isDark);
+  const surfaceTokens = getSurfaceTokens(theme, isDark);
+  const { palette } = surfaceTokens;
+  const {
+    primaryText: primaryTextColor,
+    secondaryText: secondaryTextColor,
+    tertiaryText: tertiaryTextColor
+  } = getReadableTextTokens(theme, isDark);
 
   // Calculate progress percentage
   const progress = useMemo(() => {
@@ -274,7 +260,7 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
     >
       <Card
         sx={{
-          ...getTaskCardSurface(theme, taskConfig.accentColor, isDark),
+          ...getTaskCardSurface(theme, surfaceTokens, taskConfig.accentColor),
           borderRadius: 3,
           overflow: 'hidden'
         }}
@@ -534,7 +520,8 @@ const TaskProgressItem = ({ task, currentTime, onStopTask, isStopping }) => {
 const TaskProgressPanel = () => {
   const theme = useTheme();
   const { isDark } = useResolvedColorScheme();
-  const primaryTextColor = getReadablePrimaryTextColor(theme, isDark);
+  const surfaceTokens = getSurfaceTokens(theme, isDark);
+  const { primaryText: primaryTextColor } = getReadableTextTokens(theme, isDark);
   const { taskList, hasActiveTasks, stopTask, isTaskStopping } = useTaskProgress();
   const [currentTime, setCurrentTime] = useState(Date.now());
 
@@ -549,7 +536,7 @@ const TaskProgressPanel = () => {
     <Collapse in={hasActiveTasks} unmountOnExit timeout={300}>
       <Card
         sx={{
-          ...getOuterPanelSurface(theme, '#6366f1', isDark),
+          ...getOuterPanelSurface(theme, surfaceTokens, '#6366f1'),
           mb: 4,
           borderRadius: 4,
           overflow: 'hidden',

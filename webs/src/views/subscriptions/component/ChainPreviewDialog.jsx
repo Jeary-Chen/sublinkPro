@@ -37,6 +37,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 import ChainCanvasView from './ChainCanvasView';
+import { getReadableTextTokens, getSurfaceTokens } from 'themes/surfaceTokens';
 import { withAlpha } from '../../../utils/colorUtils';
 
 // 箭头脉冲动画
@@ -87,10 +88,7 @@ function ChainNodeCard({ node, index, isLast, isMobile, theme }) {
   const hasNodes = node.nodes && node.nodes.length > 0;
   const typeColor = getTypeColor(node.type, theme);
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const nestedSurface = isDark ? withAlpha(palette.background.paper, 0.42) : palette.background.paper;
-  const mutedSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { nestedPanelSurface: nestedSurface, mutedPanelSurface: mutedSurface, panelBorder } = getSurfaceTokens(theme, isDark);
 
   return (
     <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center' }}>
@@ -455,9 +453,7 @@ RuleChainFlow.propTypes = {
 function NodeMatchTable({ matchSummary, isMobile }) {
   const theme = useTheme();
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const mutedSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { mutedPanelSurface: mutedSurface, panelBorder } = getSurfaceTokens(theme, isDark);
   const matchedCount = matchSummary?.filter((n) => !n.unmatched).length || 0;
   const unmatchedCount = matchSummary?.filter((n) => n.unmatched).length || 0;
 
@@ -531,13 +527,8 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const dialogSurface = isDark ? withAlpha(palette.background.default, 0.96) : palette.background.paper;
-  const dialogSurfaceGradient = isDark
-    ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.16)} 0%, ${dialogSurface} 100%)`
-    : 'none';
-  const mutedPanelSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { dialogSurface, dialogSurfaceGradient, mutedPanelSurface, panelBorder } = getSurfaceTokens(theme, isDark);
+  const { primaryText, secondaryText } = getReadableTextTokens(theme, isDark);
   const [tab, setTab] = useState(0);
 
   const rules = useMemo(() => data?.rules || [], [data?.rules]);
@@ -570,7 +561,7 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
                 链路预览
               </Typography>
               {data?.subscriptionName && (
-                <Typography variant="caption" color={isDark ? alpha(theme.palette.text.primary, 0.78) : 'text.secondary'}>
+                <Typography variant="caption" sx={{ color: secondaryText }}>
                   订阅：{data.subscriptionName} | 节点总数：{data.totalNodes}
                 </Typography>
               )}
@@ -590,10 +581,10 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
         ) : rules.length === 0 ? (
           <Box sx={{ textAlign: 'center', py: 6 }}>
             <AccountTreeIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2 }} />
-            <Typography variant="h6" color={isDark ? alpha(theme.palette.text.primary, 0.88) : 'text.secondary'}>
+            <Typography variant="h6" sx={{ color: primaryText }}>
               暂无链式代理规则
             </Typography>
-            <Typography variant="body2" color={isDark ? alpha(theme.palette.text.primary, 0.76) : 'text.secondary'}>
+            <Typography variant="body2" sx={{ color: secondaryText }}>
               请先添加规则
             </Typography>
           </Box>
@@ -629,7 +620,7 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
                     bgcolor: mutedPanelSurface,
                     border: '1px solid',
                     borderColor: panelBorder,
-                    color: isDark ? alpha(theme.palette.text.primary, 0.84) : theme.palette.text.secondary
+                    color: secondaryText
                   }}
                 >
                   规则按顺序匹配，每个节点只会应用第一个匹配的规则 · 鼠标滚轮缩放，拖拽平移画布

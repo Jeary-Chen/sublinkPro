@@ -29,6 +29,7 @@ import TouchAppIcon from '@mui/icons-material/TouchApp';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd';
+import { getSurfaceTokens } from 'themes/surfaceTokens';
 import {
   getChainRules,
   createChainRule,
@@ -39,7 +40,6 @@ import {
   getChainOptions,
   previewChainLinks
 } from '../../../api/subscriptions';
-import { withAlpha } from '../../../utils/colorUtils';
 import ChainPreviewDialog from './ChainPreviewDialog';
 import ChainRuleEditor from './ChainRuleEditor';
 
@@ -51,14 +51,7 @@ export default function ChainProxyDialog({ open, onClose, subscription }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const dialogSurface = isDark ? withAlpha(palette.background.default, 0.96) : palette.background.paper;
-  const dialogSurfaceGradient = isDark
-    ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.16)} 0%, ${dialogSurface} 100%)`
-    : 'none';
-  const mutedPanelSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
-  const nestedPanelSurface = isDark ? withAlpha(palette.background.paper, 0.42) : palette.background.paper;
-  const panelBorder = isDark ? withAlpha(palette.divider, 0.82) : withAlpha(palette.divider, 0.9);
+  const { dialogSurface, dialogSurfaceGradient, mutedPanelSurface, nestedPanelSurface, panelBorder } = getSurfaceTokens(theme, isDark);
 
   const [loading, setLoading] = useState(false);
   const [rules, setRules] = useState([]);

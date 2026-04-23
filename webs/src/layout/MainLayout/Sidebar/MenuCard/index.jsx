@@ -122,12 +122,12 @@ function MenuCard() {
     ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.96)} 0%, ${withAlpha(palette.background.default, 0.985)} 100%)`
     : `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.98)} 0%, ${withAlpha(palette.background.default, 0.9)} 100%)`;
   const cardBorder = hasUpdate
-    ? alpha(statusColor, isDark ? 0.28 : 0.2)
+    ? withAlpha(statusColor, isDark ? 0.28 : 0.2)
     : isDark
       ? withAlpha(palette.divider, 0.84)
       : alpha(theme.palette.divider, 0.72);
   const panelBorder = isDark ? withAlpha(palette.divider, 0.8) : alpha(theme.palette.divider, 0.72);
-  const statusBorder = alpha(statusColor, isDark ? 0.28 : 0.2);
+  const statusBorder = withAlpha(statusColor, isDark ? 0.28 : 0.2);
   const mutedTextColor = isDark ? withAlpha(palette.text.primary, 0.72) : palette.text.secondary;
   const secondaryTextColor = isDark ? withAlpha(palette.text.primary, 0.88) : palette.text.primary;
   const currentVersionColor = isDark ? withAlpha(palette.text.primary, 0.98) : palette.text.primary;
@@ -135,8 +135,8 @@ function MenuCard() {
   const statusHintColor =
     versionStatus.key === 'update' ? (isDark ? withAlpha(palette.warning.light, 0.9) : mutedTextColor) : mutedTextColor;
   const statusPanelBackground = isDark
-    ? `linear-gradient(180deg, ${alpha(statusColor, 0.14)} 0%, ${withAlpha(palette.background.default, 0.82)} 100%)`
-    : alpha(statusColor, versionStatus.key === 'update' ? 0.08 : 0.06);
+    ? `linear-gradient(180deg, ${withAlpha(statusColor, 0.14)} 0%, ${withAlpha(palette.background.default, 0.82)} 100%)`
+    : withAlpha(statusColor, versionStatus.key === 'update' ? 0.08 : 0.06);
   const currentVersionBackground = isDark
     ? `linear-gradient(180deg, ${withAlpha(palette.background.paper, 0.2)} 0%, ${withAlpha(palette.background.default, 0.82)} 100%)`
     : withAlpha(palette.background.default, 0.78);
@@ -190,9 +190,9 @@ function MenuCard() {
               borderRadius: 2,
               color: titleAccentColor,
               border: '1px solid',
-              borderColor: hasUpdate ? alpha(statusColor, isDark ? 0.3 : 0.2) : alpha(theme.palette.primary.main, isDark ? 0.28 : 0.16),
+              borderColor: hasUpdate ? withAlpha(statusColor, isDark ? 0.3 : 0.2) : alpha(theme.palette.primary.main, isDark ? 0.28 : 0.16),
               bgcolor: hasUpdate
-                ? alpha(statusColor, isDark ? 0.16 : 0.1)
+                ? withAlpha(statusColor, isDark ? 0.16 : 0.1)
                 : isDark
                   ? alpha(theme.palette.background.paper, 0.16)
                   : alpha(theme.palette.primary.main, 0.06),
@@ -295,7 +295,7 @@ function MenuCard() {
                     height: 6,
                     borderRadius: '50%',
                     bgcolor: statusColor,
-                    boxShadow: `0 0 0 3px ${alpha(statusColor, isDark ? 0.14 : 0.1)}`,
+                    boxShadow: `0 0 0 3px ${withAlpha(statusColor, isDark ? 0.14 : 0.1)}`,
                     flexShrink: 0,
                     mt: 0.6
                   }}

@@ -56,18 +56,30 @@ import { getAirports } from 'api/airports';
 import { formatBytes, formatExpireTime, getUsageColor } from 'views/airports/utils';
 import { getQualityStatusMeta } from 'utils/fraudScore';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
+import { getReadableTextTokens, getSurfaceTokens } from 'themes/surfaceTokens';
 import { withAlpha } from 'utils/colorUtils';
 
-const getCalmSurface = (theme, accentColor, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkSurfaceBase = withAlpha(palette.background.default, 0.96);
-  const darkSurfaceElevated = withAlpha(palette.background.paper, 0.82);
-  const darkSurfaceBackground = `linear-gradient(180deg, ${darkSurfaceElevated} 0%, ${darkSurfaceBase} 100%)`;
+const getDashboardReadableTextTokens = (theme, isDark) => {
+  const readableTextTokens = getReadableTextTokens(theme, isDark);
 
   return {
-    backgroundColor: isDark ? darkSurfaceBase : palette.background.paper,
-    backgroundImage: isDark ? darkSurfaceBackground : 'none',
-    border: `1px solid ${isDark ? withAlpha(palette.divider, 0.82) : alpha(accentColor, 0.12)}`,
+    primaryText: readableTextTokens.primaryText,
+    secondaryText: isDark ? withAlpha(readableTextTokens.primaryText, 0.84) : withAlpha(readableTextTokens.primaryText, 0.76),
+    tertiaryText: isDark ? withAlpha(readableTextTokens.primaryText, 0.72) : readableTextTokens.tertiaryText,
+    statValueText: isDark ? withAlpha(readableTextTokens.primaryText, 0.98) : readableTextTokens.primaryText,
+    statPercentText: isDark ? withAlpha(readableTextTokens.primaryText, 0.92) : withAlpha(readableTextTokens.primaryText, 0.8)
+  };
+};
+
+const getCalmSurface = (theme, accentColor, isDark) => {
+  const { palette, dialogSurface, panelBorder } = getSurfaceTokens(theme, isDark);
+  const darkSurfaceElevated = isDark ? withAlpha(palette.background.paper, 0.82) : dialogSurface;
+  const calmSurfaceBackground = isDark ? `linear-gradient(180deg, ${darkSurfaceElevated} 0%, ${dialogSurface} 100%)` : 'none';
+
+  return {
+    backgroundColor: dialogSurface,
+    backgroundImage: calmSurfaceBackground,
+    border: `1px solid ${isDark ? panelBorder : alpha(accentColor, 0.12)}`,
     boxShadow: isDark
       ? `0 14px 34px ${alpha(theme.palette.common.black, 0.22)}, inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}`
       : `0 1px 3px ${alpha(theme.palette.common.black, 0.06)}`,
@@ -82,7 +94,7 @@ const getCalmSurface = (theme, accentColor, isDark) => {
   };
 };
 
-const getAccentIconBox = (theme, accentColor, isDark) => ({
+const getAccentIconBox = (accentColor, isDark) => ({
   width: 40,
   height: 40,
   borderRadius: 2,
@@ -96,63 +108,64 @@ const getAccentIconBox = (theme, accentColor, isDark) => ({
 });
 
 const getAccentChipSx = (theme, accentColor, isDark) => ({
-  bgcolor: alpha(accentColor, isDark ? 0.18 : 0.08),
-  color: isDark ? alpha('#fff', 0.92) : alpha(accentColor, 0.92),
-  border: `1px solid ${alpha(accentColor, isDark ? 0.3 : 0.2)}`,
-  fontWeight: 600,
-  '&:hover': {
-    bgcolor: alpha(accentColor, isDark ? 0.24 : 0.12)
-  }
+  ...(() => {
+    const { primaryText } = getDashboardReadableTextTokens(theme, isDark);
+
+    return {
+      bgcolor: alpha(accentColor, isDark ? 0.18 : 0.08),
+      color: isDark ? withAlpha(primaryText, 0.92) : withAlpha(accentColor, 0.92),
+      border: `1px solid ${alpha(accentColor, isDark ? 0.3 : 0.2)}`,
+      fontWeight: 600,
+      '&:hover': {
+        bgcolor: alpha(accentColor, isDark ? 0.24 : 0.12)
+      }
+    };
+  })()
 });
 
 const getReadablePrimaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.94) : theme.palette.text.primary;
+  return getDashboardReadableTextTokens(theme, isDark).primaryText;
 };
 
 const getReadableSecondaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.84) : alpha(theme.palette.text.primary, 0.76);
+  return getDashboardReadableTextTokens(theme, isDark).secondaryText;
 };
 
 const getReadableTertiaryTextColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.72) : alpha(theme.palette.text.primary, 0.68);
+  return getDashboardReadableTextTokens(theme, isDark).tertiaryText;
 };
 
 const getReadableStatValueColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.98) : theme.palette.text.primary;
+  return getDashboardReadableTextTokens(theme, isDark).statValueText;
 };
 
 const getReadableStatPercentColor = (theme, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkText = palette.text?.dark || theme.palette.common.white;
-  return isDark ? withAlpha(darkText, 0.92) : alpha(theme.palette.text.primary, 0.8);
+  return getDashboardReadableTextTokens(theme, isDark).statPercentText;
 };
 
-const getReadableWarningAccentColor = (theme, isDark) => (isDark ? alpha(theme.palette.warning.light, 0.94) : '#d97706');
+const getReadableWarningAccentColor = (theme, isDark) =>
+  isDark ? withAlpha(theme.palette.warning.light, 0.94) : theme.palette.warning.dark;
 
-const getGitHubChipSx = (theme, isDark) => ({
-  bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : alpha(theme.palette.common.black, 0.04),
-  color: isDark ? alpha(theme.palette.common.white, 0.92) : '#24292f',
-  border: `1px solid ${isDark ? alpha(theme.palette.common.white, 0.18) : 'rgba(27, 31, 36, 0.15)'}`,
-  fontWeight: 600,
-  '&:hover': {
-    bgcolor: isDark ? alpha(theme.palette.common.white, 0.12) : alpha(theme.palette.common.black, 0.07)
-  },
-  '& .MuiChip-icon': {
-    color: 'inherit'
-  }
-});
+const getGitHubChipSx = (theme, isDark) => {
+  const { primaryText } = getDashboardReadableTextTokens(theme, isDark);
+
+  return {
+    bgcolor: isDark ? alpha(theme.palette.common.white, 0.08) : alpha(theme.palette.common.black, 0.04),
+    color: isDark ? withAlpha(primaryText, 0.98) : '#24292f',
+    border: `1px solid ${isDark ? alpha(theme.palette.common.white, 0.18) : 'rgba(27, 31, 36, 0.15)'}`,
+    fontWeight: 600,
+    '&:hover': {
+      bgcolor: isDark ? alpha(theme.palette.common.white, 0.12) : alpha(theme.palette.common.black, 0.07)
+    },
+    '& .MuiChip-icon': {
+      color: 'inherit'
+    }
+  };
+};
 
 const getInsetPanelSurface = (theme, accentColor, isDark) => {
-  const palette = theme.vars?.palette || theme.palette;
-  const darkPanelBase = withAlpha(palette.background.default, 0.74);
+  const { palette, mutedPanelSurface } = getSurfaceTokens(theme, isDark);
+  const darkPanelBase = mutedPanelSurface;
   const darkPanelElevated = withAlpha(palette.background.paper, 0.4);
 
   return {
@@ -337,7 +350,7 @@ const normalizeTagStats = ({ tags = [], limit }) => {
   return buildTopItems(normalized, total, limit);
 };
 
-const getProgressBarSx = (theme, color, isDark, muted = false) => ({
+const getProgressBarSx = (color, isDark, muted = false) => ({
   height: 7,
   borderRadius: 999,
   bgcolor: alpha(color, isDark ? 0.22 : 0.12),
@@ -386,7 +399,7 @@ const StatsChartCard = ({ title, icon: Icon, accentColor, summary, loading, tool
     >
       <CardContent sx={{ p: 3 }}>
         <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 1.5, mb: 2.5, flexWrap: 'wrap' }}>
-          <Box sx={getAccentIconBox(theme, accentColor, isDark)}>
+          <Box sx={getAccentIconBox(accentColor, isDark)}>
             <Icon sx={{ fontSize: 22 }} />
           </Box>
           <Box sx={{ flex: 1, minWidth: 0 }}>
@@ -600,7 +613,7 @@ const RankedStatList = ({
             <LinearProgress
               variant="determinate"
               value={Math.max(0, Math.min(item.percent, 100))}
-              sx={getProgressBarSx(theme, item.color, isDark, muted)}
+              sx={getProgressBarSx(item.color, isDark, muted)}
             />
             {item.isCollapsedOther && isExpanded && item.hiddenItems?.length ? (
               <Box
@@ -662,7 +675,7 @@ const RankedStatList = ({
                     <LinearProgress
                       variant="determinate"
                       value={Math.max(0, Math.min(hiddenItem.percent, 100))}
-                      sx={getProgressBarSx(theme, hiddenItem.color || item.color, isDark, true)}
+                      sx={getProgressBarSx(hiddenItem.color || item.color, isDark, true)}
                     />
                   </Box>
                 ))}
@@ -713,7 +726,7 @@ const QualityMetricRow = ({ label, count, percent, color, tooltip }) => {
           </Typography>
         </Box>
       </Box>
-      <LinearProgress variant="determinate" value={Math.max(0, Math.min(percent, 100))} sx={getProgressBarSx(theme, color, isDark)} />
+      <LinearProgress variant="determinate" value={Math.max(0, Math.min(percent, 100))} sx={getProgressBarSx(color, isDark)} />
     </Box>
   );
 
@@ -1369,7 +1382,7 @@ const AirportUsageCard = ({ airports = [], loading }) => {
     >
       <CardContent sx={{ p: 3, position: 'relative' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 3 }}>
-          <Box sx={getAccentIconBox(theme, usageAccent, isDark)}>
+          <Box sx={getAccentIconBox(usageAccent, isDark)}>
             <FlightTakeoffIcon sx={{ fontSize: 22 }} />
           </Box>
           <Typography variant="h5" sx={{ fontWeight: 600 }}>

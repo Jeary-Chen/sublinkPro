@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { alpha, useColorScheme, useTheme } from '@mui/material/styles';
+import { useColorScheme, useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -18,9 +18,9 @@ import SettingsBrightnessOutlinedIcon from '@mui/icons-material/SettingsBrightne
 import { DEFAULT_THEME_MODE } from 'config';
 import ThemeModeSelector from 'components/ThemeModeSelector';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
+import { getHeaderPopoverTokens, getHeaderTriggerTokens } from '../headerPopoverTokens';
 import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
-import { withAlpha } from 'utils/colorUtils';
 
 const modeMeta = {
   system: {
@@ -45,7 +45,6 @@ export default function ThemeModeSection() {
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const { mode } = useColorScheme();
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
 
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
@@ -54,14 +53,22 @@ export default function ThemeModeSection() {
   const currentMeta = modeMeta[selectedMode] || modeMeta.system;
   const Icon = currentMeta.icon;
   const paletteColor = theme.palette[currentMeta.colorKey];
-  const iconColor = isDark
+  const accentColor = isDark
     ? paletteColor.main
     : currentMeta.colorKey === 'warning'
       ? theme.palette.warning.dark
       : paletteColor.dark || paletteColor.main;
-  const popoverSurface = palette.background.paper;
-  const popoverSurfaceAccent = isDark ? `linear-gradient(180deg, ${alpha(theme.palette.common.white, 0.02)} 0%, transparent 100%)` : 'none';
-  const popoverBorder = withAlpha(palette.divider, isDark ? 0.84 : 0.72);
+  const { popoverSurface, popoverSurfaceAccent, popoverBorder, popoverInsetShadow, mutedText } = getHeaderPopoverTokens(theme, isDark);
+  const { triggerColor, triggerSurface, triggerBorder, activeColor, activeSurface, activeBorder } = getHeaderTriggerTokens(
+    theme,
+    isDark,
+    accentColor,
+    {
+      lightSurfaceAlpha: 0.14,
+      lightHoverAlpha: 0.22,
+      triggerColor: accentColor
+    }
+  );
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -97,14 +104,14 @@ export default function ThemeModeSection() {
               ...theme.typography.commonAvatar,
               ...theme.typography.mediumAvatar,
               transition: 'all .2s ease-in-out',
-              color: iconColor,
-              background: alpha(paletteColor.main, isDark ? 0.22 : 0.14),
+              color: triggerColor,
+              background: triggerSurface,
               border: '1px solid',
-              borderColor: alpha(iconColor, isDark ? 0.3 : 0.2),
+              borderColor: triggerBorder,
               '&:hover, &[aria-controls="theme-mode-menu"]': {
-                color: theme.palette.common.white,
-                background: iconColor,
-                borderColor: iconColor
+                color: activeColor,
+                background: activeSurface,
+                borderColor: activeBorder
               }
             }}
           >
@@ -141,7 +148,7 @@ export default function ThemeModeSection() {
                       backgroundImage: popoverSurfaceAccent,
                       border: '1px solid',
                       borderColor: popoverBorder,
-                      boxShadow: isDark ? `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}` : undefined
+                      boxShadow: popoverInsetShadow
                     }}
                   >
                     <Stack sx={{ p: 2.5, gap: 2 }}>
@@ -149,7 +156,7 @@ export default function ThemeModeSection() {
                         <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
                           主题模式
                         </Typography>
-                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        <Typography variant="body2" sx={{ mt: 0.5, color: mutedText }}>
                           当前为 {currentMeta.label}，可立即切换整个界面的配色方案。
                         </Typography>
                       </Box>

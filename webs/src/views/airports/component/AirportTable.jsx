@@ -278,7 +278,31 @@ export default function AirportTable({
     }
 
     return (
-      <Tooltip arrow placement="top" title={<AirportNodeStatsCard nodeStats={nodeStats} nodeCount={nodeCount} />}>
+      <Tooltip
+        arrow
+        placement="top"
+        title={<AirportNodeStatsCard nodeStats={nodeStats} nodeCount={nodeCount} />}
+        slotProps={{
+          tooltip: {
+            sx: {
+              p: 0,
+              bgcolor: 'transparent',
+              backgroundImage: 'none',
+              border: 'none',
+              boxShadow: 'none',
+              maxWidth: 'none'
+            }
+          },
+          arrow: {
+            sx: {
+              color: 'transparent',
+              '&::before': {
+                border: 'none'
+              }
+            }
+          }
+        }}
+      >
         <Box sx={{ cursor: 'help' }}>
           {/* 通过数量 */}
           <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>

@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 
 // material-ui
-import { alpha, useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -18,7 +18,7 @@ import Button from '@mui/material/Button';
 import MainCard from 'ui-component/cards/MainCard';
 import Transitions from 'ui-component/extended/Transitions';
 import useResolvedColorScheme from 'hooks/useResolvedColorScheme';
-import { withAlpha } from 'utils/colorUtils';
+import { getHeaderPopoverTokens, getHeaderTriggerTokens } from '../headerPopoverTokens';
 
 // assets
 import { IconCoffee } from '@tabler/icons-react';
@@ -29,19 +29,16 @@ export default function DonationSection() {
   const theme = useTheme();
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
   const [open, setOpen] = useState(false);
   const anchorRef = useRef(null);
+  const accentColor = theme.palette[donationConfig.headerIconColor].main;
 
-  const iconSurface = isDark
-    ? withAlpha(palette.background.default, 0.88)
-    : alpha(theme.palette[donationConfig.headerIconColor].main, 0.12);
-  const iconHoverSurface = isDark
-    ? withAlpha(palette[donationConfig.headerIconColor].main, 0.16)
-    : alpha(theme.palette[donationConfig.headerIconColor].main, 0.22);
-  const popoverSurface = palette.background.paper;
-  const popoverSurfaceAccent = isDark ? `linear-gradient(180deg, ${alpha(theme.palette.common.white, 0.02)} 0%, transparent 100%)` : 'none';
-  const popoverBorder = withAlpha(palette.divider, isDark ? 0.84 : 0.72);
+  const { popoverSurface, popoverSurfaceAccent, popoverBorder, popoverInsetShadow } = getHeaderPopoverTokens(theme, isDark);
+  const { triggerColor, triggerSurface, triggerBorder, activeSurface, activeBorder } = getHeaderTriggerTokens(theme, isDark, accentColor, {
+    lightSurfaceAlpha: 0.12,
+    lightHoverAlpha: 0.22,
+    activeColor: accentColor
+  });
 
   const handleToggle = () => {
     setOpen((prevOpen) => !prevOpen);
@@ -72,14 +69,15 @@ export default function DonationSection() {
               ...theme.typography.commonAvatar,
               ...theme.typography.mediumAvatar,
               transition: 'all .2s ease-in-out',
-              color: theme.palette[donationConfig.headerIconColor].main,
-              background: iconSurface,
+              color: triggerColor,
+              background: triggerSurface,
               border: '1px solid',
-              borderColor: alpha(theme.palette[donationConfig.headerIconColor].main, isDark ? 0.28 : 0.18),
+              borderColor: triggerBorder,
               position: 'relative',
               '&:hover, &[aria-controls="menu-list-grow"]': {
-                color: theme.palette[donationConfig.headerIconColor].main,
-                background: iconHoverSurface
+                color: triggerColor,
+                background: activeSurface,
+                borderColor: activeBorder
               }
             }}
             ref={anchorRef}
@@ -117,7 +115,7 @@ export default function DonationSection() {
                       backgroundImage: popoverSurfaceAccent,
                       border: '1px solid',
                       borderColor: popoverBorder,
-                      boxShadow: isDark ? `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}` : undefined
+                      boxShadow: popoverInsetShadow
                     }}
                   >
                     <Stack sx={{ gap: 2, p: 2 }}>

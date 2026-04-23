@@ -37,8 +37,7 @@ import CheckCircleIcon from '@mui/icons-material/CheckCircle';
 import CancelIcon from '@mui/icons-material/Cancel';
 
 import ChainCanvasView from './ChainCanvasView';
-import { getReadableTextTokens, getSurfaceTokens } from 'themes/surfaceTokens';
-import { withAlpha } from '../../../utils/colorUtils';
+import { getChainProxyIconButtonSx, getChainProxyThemeTokens } from './chainProxyTheme';
 
 // 箭头脉冲动画
 const pulseAnimation = keyframes`
@@ -88,7 +87,8 @@ function ChainNodeCard({ node, index, isLast, isMobile, theme }) {
   const hasNodes = node.nodes && node.nodes.length > 0;
   const typeColor = getTypeColor(node.type, theme);
   const { isDark } = useResolvedColorScheme();
-  const { nestedPanelSurface: nestedSurface, mutedPanelSurface: mutedSurface, panelBorder } = getSurfaceTokens(theme, isDark);
+  const tokens = getChainProxyThemeTokens(theme, isDark);
+  const { elevatedSurface, mutedPanelSurface: mutedSurface, softBorder, secondaryText, tertiaryText, cardShadow } = tokens;
 
   return (
     <Box sx={{ display: 'flex', flexDirection: isMobile ? 'column' : 'row', alignItems: 'center' }}>
@@ -96,10 +96,11 @@ function ChainNodeCard({ node, index, isLast, isMobile, theme }) {
         sx={{
           minWidth: isMobile ? '100%' : 140,
           maxWidth: isMobile ? '100%' : 180,
-          backgroundColor: nestedSurface,
-          border: `1px solid ${alpha(typeColor, isDark ? 0.36 : 0.3)}`,
+          backgroundColor: elevatedSurface,
+          border: `1px solid ${alpha(typeColor, isDark ? 0.36 : 0.26)}`,
           borderRadius: 2,
           transition: 'all 0.2s ease',
+          boxShadow: cardShadow,
           '&:hover': {
             borderColor: typeColor,
             boxShadow: isDark ? `inset 0 1px 0 ${alpha(theme.palette.common.white, 0.04)}` : theme.shadows[2]
@@ -112,15 +113,16 @@ function ChainNodeCard({ node, index, isLast, isMobile, theme }) {
               size="small"
               label={getTypeLabel(node.type)}
               sx={{
-                bgcolor: alpha(typeColor, 0.15),
+                bgcolor: alpha(typeColor, isDark ? 0.18 : 0.12),
                 color: typeColor,
                 fontWeight: 600,
                 fontSize: 10,
                 height: 18,
+                border: `1px solid ${alpha(typeColor, isDark ? 0.3 : 0.22)}`,
                 '& .MuiChip-label': { px: 0.75 }
               }}
             />
-            <Typography variant="caption" color="text.secondary">
+            <Typography variant="caption" sx={{ color: secondaryText }}>
               #{index + 1}
             </Typography>
           </Stack>
@@ -164,18 +166,13 @@ function ChainNodeCard({ node, index, isLast, isMobile, theme }) {
                 overflow: 'auto',
                 bgcolor: mutedSurface,
                 border: '1px solid',
-                borderColor: panelBorder,
+                borderColor: softBorder,
                 borderRadius: 1,
                 p: 0.5
               }}
             >
               {node.nodes?.map((n, i) => (
-                <Typography
-                  key={i}
-                  variant="caption"
-                  display="block"
-                  sx={{ py: 0.25, color: isDark ? alpha(theme.palette.text.primary, 0.84) : 'text.secondary' }}
-                >
+                <Typography key={i} variant="caption" display="block" sx={{ py: 0.25, color: tertiaryText }}>
                   {getCountryFlag(n.linkCountry)} {n.name}
                 </Typography>
               ))}
@@ -227,9 +224,10 @@ ChainNodeCard.propTypes = {
 function RuleChainFlow({ rule, isMobile, theme }) {
   const [expanded, setExpanded] = useState(!rule.fullyCovered);
   const { isDark } = useResolvedColorScheme();
-  const palette = theme.vars?.palette || theme.palette;
-  const nestedSurface = isDark ? withAlpha(palette.background.paper, 0.4) : palette.background.paper;
-  const mutedSurface = isDark ? withAlpha(palette.background.default, 0.84) : palette.background.default;
+  const tokens = getChainProxyThemeTokens(theme, isDark);
+  const { elevatedSurface, mutedPanelSurface, softBorder, warningSurface, warningSoftBorder, secondaryText, tertiaryText, cardShadow } =
+    tokens;
+  const expandButtonSx = getChainProxyIconButtonSx(tokens);
 
   // 规则是否完全被覆盖（无生效节点）
   const isFullyCovered = rule.enabled && rule.fullyCovered;
@@ -242,8 +240,9 @@ function RuleChainFlow({ rule, isMobile, theme }) {
         borderRadius: 2,
         opacity: rule.enabled ? (isFullyCovered ? 0.6 : 1) : 0.4,
         transition: 'all 0.2s ease',
-        borderColor: isFullyCovered ? 'warning.main' : 'divider',
-        bgcolor: isFullyCovered ? alpha(theme.palette.warning.main, isDark ? 0.12 : 0.06) : nestedSurface
+        boxShadow: cardShadow,
+        borderColor: isFullyCovered ? warningSoftBorder : softBorder,
+        bgcolor: isFullyCovered ? warningSurface : elevatedSurface
       }}
     >
       <CardContent sx={{ p: 2, '&:last-child': { pb: 2 } }}>
@@ -262,7 +261,7 @@ function RuleChainFlow({ rule, isMobile, theme }) {
               <Chip label={`${rule.coveredNodes} 被覆盖`} size="small" color="warning" variant="outlined" />
             )}
           </Stack>
-          <IconButton size="small" onClick={() => setExpanded(!expanded)}>
+          <IconButton size="small" onClick={() => setExpanded(!expanded)} sx={expandButtonSx}>
             {expanded ? <ExpandLessIcon /> : <ExpandMoreIcon />}
           </IconButton>
         </Stack>
@@ -287,8 +286,8 @@ function RuleChainFlow({ rule, isMobile, theme }) {
                   px: 1.5,
                   py: 0.75,
                   borderRadius: 2,
-                  bgcolor: mutedSurface,
-                  border: `1px dashed ${alpha(theme.palette.info.main, 0.4)}`,
+                  bgcolor: tokens.infoSurface,
+                  border: `1px dashed ${tokens.infoSoftBorder}`,
                   textAlign: 'center',
                   minWidth: 60
                 }}
@@ -368,27 +367,27 @@ function RuleChainFlow({ rule, isMobile, theme }) {
                 px: 1.5,
                 py: 0.75,
                 borderRadius: 2,
-                bgcolor: mutedSurface,
-                border: `1px solid ${alpha(theme.palette.error.main, 0.3)}`,
+                bgcolor: tokens.warningSurface,
+                border: `1px solid ${tokens.warningSoftBorder}`,
                 textAlign: 'center',
                 minWidth: isMobile ? '100%' : 100
               }}
             >
               {rule.targetType === 'all' ? (
-                <LayersIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />
+                <LayersIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />
               ) : rule.targetType === 'conditions' ? (
-                <AdjustIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />
+                <AdjustIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />
               ) : (
-                <FlagIcon sx={{ color: theme.palette.error.main, fontSize: 20 }} />
+                <FlagIcon sx={{ color: theme.palette.warning.main, fontSize: 20 }} />
               )}
-              <Typography variant="caption" display="block" fontWeight={600} color="error.main">
+              <Typography variant="caption" display="block" fontWeight={600} color="warning.main">
                 落地节点
               </Typography>
-              <Typography variant="caption" display="block" color={isDark ? alpha(theme.palette.text.primary, 0.78) : 'text.secondary'}>
+              <Typography variant="caption" display="block" sx={{ color: tertiaryText }}>
                 {rule.targetInfo}
               </Typography>
               {rule.targetNodes?.length > 0 && (
-                <Typography variant="caption" color={isDark ? alpha(theme.palette.text.primary, 0.72) : 'text.secondary'}>
+                <Typography variant="caption" sx={{ color: secondaryText }}>
                   ({rule.targetNodes.length} 节点)
                 </Typography>
               )}
@@ -425,8 +424,8 @@ function RuleChainFlow({ rule, isMobile, theme }) {
                 px: 1.5,
                 py: 0.75,
                 borderRadius: 2,
-                bgcolor: mutedSurface,
-                border: `1px dashed ${alpha(theme.palette.success.main, 0.4)}`,
+                bgcolor: mutedPanelSurface,
+                border: `1px dashed ${tokens.successSoftBorder}`,
                 textAlign: 'center',
                 minWidth: 60
               }}
@@ -453,24 +452,44 @@ RuleChainFlow.propTypes = {
 function NodeMatchTable({ matchSummary, isMobile }) {
   const theme = useTheme();
   const { isDark } = useResolvedColorScheme();
-  const { mutedPanelSurface: mutedSurface, panelBorder } = getSurfaceTokens(theme, isDark);
+  const tokens = getChainProxyThemeTokens(theme, isDark);
+  const { elevatedSurface, tableHeaderSurface, softBorder, secondaryText, tertiaryText, successSurface, successSoftBorder } = tokens;
   const matchedCount = matchSummary?.filter((n) => !n.unmatched).length || 0;
   const unmatchedCount = matchSummary?.filter((n) => n.unmatched).length || 0;
 
   return (
     <Box>
       <Stack direction="row" spacing={2} mb={2}>
-        <Chip icon={<CheckCircleIcon />} label={`已匹配: ${matchedCount}`} color="success" variant="outlined" size="small" />
-        <Chip icon={<CancelIcon />} label={`未匹配: ${unmatchedCount}`} color="default" variant="outlined" size="small" />
+        <Chip
+          icon={<CheckCircleIcon />}
+          label={`已匹配: ${matchedCount}`}
+          size="small"
+          sx={{ bgcolor: successSurface, border: '1px solid', borderColor: successSoftBorder, color: 'success.main' }}
+        />
+        <Chip
+          icon={<CancelIcon />}
+          label={`未匹配: ${unmatchedCount}`}
+          size="small"
+          sx={{ bgcolor: elevatedSurface, border: '1px solid', borderColor: softBorder, color: secondaryText }}
+        />
       </Stack>
 
-      <Box sx={{ maxHeight: 300, overflow: 'auto', borderRadius: 2, border: '1px solid', borderColor: panelBorder, bgcolor: mutedSurface }}>
+      <Box
+        sx={{
+          maxHeight: 300,
+          overflow: 'auto',
+          borderRadius: 2,
+          border: '1px solid',
+          borderColor: softBorder,
+          bgcolor: elevatedSurface
+        }}
+      >
         <Table size="small" stickyHeader>
           <TableHead>
             <TableRow>
-              <TableCell sx={{ bgcolor: mutedSurface }}>节点</TableCell>
-              <TableCell sx={{ bgcolor: mutedSurface }}>匹配规则</TableCell>
-              <TableCell sx={{ bgcolor: mutedSurface }}>入口代理</TableCell>
+              <TableCell sx={{ bgcolor: tableHeaderSurface, color: secondaryText }}>节点</TableCell>
+              <TableCell sx={{ bgcolor: tableHeaderSurface, color: secondaryText }}>匹配规则</TableCell>
+              <TableCell sx={{ bgcolor: tableHeaderSurface, color: secondaryText }}>入口代理</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -489,7 +508,7 @@ function NodeMatchTable({ matchSummary, isMobile }) {
                 </TableCell>
                 <TableCell>
                   {node.unmatched ? (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: tertiaryText }}>
                       无
                     </Typography>
                   ) : (
@@ -500,7 +519,7 @@ function NodeMatchTable({ matchSummary, isMobile }) {
                   {node.entryProxy ? (
                     <Typography variant="body2">{node.entryProxy}</Typography>
                   ) : (
-                    <Typography variant="caption" color="text.secondary">
+                    <Typography variant="caption" sx={{ color: tertiaryText }}>
                       -
                     </Typography>
                   )}
@@ -527,8 +546,20 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const { isDark } = useResolvedColorScheme();
-  const { dialogSurface, dialogSurfaceGradient, mutedPanelSurface, panelBorder } = getSurfaceTokens(theme, isDark);
-  const { primaryText, secondaryText } = getReadableTextTokens(theme, isDark);
+  const tokens = getChainProxyThemeTokens(theme, isDark);
+  const {
+    dialogSurface,
+    dialogSurfaceGradient,
+    mutedPanelSurface,
+    elevatedSurface,
+    panelBorder,
+    softBorder,
+    primaryText,
+    secondaryText,
+    tertiaryText,
+    cardShadow
+  } = tokens;
+  const iconButtonSx = getChainProxyIconButtonSx(tokens);
   const [tab, setTab] = useState(0);
 
   const rules = useMemo(() => data?.rules || [], [data?.rules]);
@@ -541,14 +572,16 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
       maxWidth="lg"
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          borderRadius: isMobile ? 0 : 3,
-          minHeight: isMobile ? 'auto' : '70vh',
-          border: '1px solid',
-          borderColor: panelBorder,
-          bgcolor: dialogSurface,
-          backgroundImage: dialogSurfaceGradient
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: isMobile ? 0 : 3,
+            minHeight: isMobile ? 'auto' : '70vh',
+            border: '1px solid',
+            borderColor: panelBorder,
+            bgcolor: dialogSurface,
+            backgroundImage: dialogSurfaceGradient
+          }
         }
       }}
     >
@@ -567,7 +600,7 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
               )}
             </Box>
           </Stack>
-          <IconButton onClick={onClose} size="small" sx={{ color: 'text.secondary' }}>
+          <IconButton onClick={onClose} size="small" sx={iconButtonSx}>
             <CloseIcon />
           </IconButton>
         </Stack>
@@ -579,8 +612,8 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
             <CircularProgress />
           </Box>
         ) : rules.length === 0 ? (
-          <Box sx={{ textAlign: 'center', py: 6 }}>
-            <AccountTreeIcon sx={{ fontSize: 56, color: 'text.secondary', mb: 2 }} />
+          <Box sx={{ textAlign: 'center', py: 6, px: 2 }}>
+            <AccountTreeIcon sx={{ fontSize: 56, color: secondaryText, mb: 2 }} />
             <Typography variant="h6" sx={{ color: primaryText }}>
               暂无链式代理规则
             </Typography>
@@ -592,14 +625,23 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
           <>
             <Tabs
               value={tab}
-              onChange={(e, v) => setTab(v)}
+              onChange={(_, v) => setTab(v)}
               sx={{
                 borderBottom: 1,
                 mb: 2,
-                bgcolor: mutedPanelSurface,
+                mt: 2,
+                bgcolor: elevatedSurface,
                 borderRadius: 2,
                 border: '1px solid',
-                borderColor: panelBorder
+                borderColor: softBorder,
+                boxShadow: cardShadow,
+                '& .MuiTab-root': {
+                  color: secondaryText,
+                  minHeight: 44
+                },
+                '& .Mui-selected': {
+                  color: primaryText
+                }
               }}
             >
               <Tab label={`规则链路 (${rules.length})`} />
@@ -617,10 +659,11 @@ export default function ChainPreviewDialog({ open, onClose, loading, data }) {
                     px: 1,
                     py: 0.75,
                     borderRadius: 1.5,
-                    bgcolor: mutedPanelSurface,
+                    bgcolor: elevatedSurface,
                     border: '1px solid',
-                    borderColor: panelBorder,
-                    color: secondaryText
+                    borderColor: softBorder,
+                    color: tertiaryText,
+                    boxShadow: cardShadow
                   }}
                 >
                   规则按顺序匹配，每个节点只会应用第一个匹配的规则 · 鼠标滚轮缩放，拖拽平移画布

@@ -43,13 +43,10 @@ import {
  */
 export default function NodeTable({
   nodes,
-  page,
-  rowsPerPage,
   selectedNodes,
   sortBy,
   sortOrder,
   tagColorMap,
-  onSelectAll,
   onSelect,
   onSort,
   onSpeedTest,
@@ -80,13 +77,7 @@ export default function NodeTable({
       >
         <TableHead>
           <TableRow>
-            <TableCell padding="checkbox">
-              <Checkbox
-                indeterminate={selectedNodes.length > 0 && selectedNodes.length < nodes.length}
-                checked={nodes.length > 0 && selectedNodes.length >= nodes.length}
-                onChange={onSelectAll}
-              />
-            </TableCell>
+            <TableCell padding="checkbox" />
             <TableCell sx={{ minWidth: 132 }}>备注</TableCell>
             <TableCell sx={{ minWidth: 88 }}>分组</TableCell>
             <TableCell sx={{ minWidth: 88 }}>来源</TableCell>
@@ -403,13 +394,10 @@ export default function NodeTable({
 
 NodeTable.propTypes = {
   nodes: PropTypes.array.isRequired,
-  page: PropTypes.number.isRequired,
-  rowsPerPage: PropTypes.number.isRequired,
   selectedNodes: PropTypes.array.isRequired,
   sortBy: PropTypes.string.isRequired,
   sortOrder: PropTypes.string.isRequired,
   tagColorMap: PropTypes.object,
-  onSelectAll: PropTypes.func.isRequired,
   onSelect: PropTypes.func.isRequired,
   onSort: PropTypes.func.isRequired,
   onSpeedTest: PropTypes.func.isRequired,

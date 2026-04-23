@@ -27,9 +27,11 @@ export default function BatchActions({
   onTag,
   onRemoveTag
 }) {
+  const hasSelection = selectedCount > 0;
+
   // 是否全选（当前页全选或所有符合条件节点全选）
-  const isAllSelected = selectedCount > 0 && selectedCount >= totalCount;
-  const isIndeterminate = selectedCount > 0 && selectedCount < totalCount;
+  const isAllSelected = hasSelection && selectedCount >= totalCount;
+  const isIndeterminate = hasSelection && selectedCount < totalCount;
 
   return (
     <Stack
@@ -53,47 +55,57 @@ export default function BatchActions({
             userSelect: 'none',
             whiteSpace: 'nowrap'
           }}
-          onClick={(e) => onSelectAll({ target: { checked: !isAllSelected } })}
+          onClick={() => onSelectAll({ target: { checked: !isAllSelected } })}
         >
           全选
         </Typography>
       </Box>
 
       {/* 已选择数量显示 */}
-      {selectedCount > 0 && (
-        <>
-          <Typography variant="body2" sx={{ alignSelf: 'center', whiteSpace: 'nowrap' }}>
-            已选择 {selectedCount} 个节点
-          </Typography>
+      <Typography variant="body2" sx={{ alignSelf: 'center', whiteSpace: 'nowrap' }}>
+        已选择 {selectedCount} 个节点
+      </Typography>
 
-          {/* 清除选择按钮 */}
-          <Button size="small" color="inherit" startIcon={<ClearIcon />} onClick={onClearSelection} sx={{ whiteSpace: 'nowrap' }}>
-            取消
-          </Button>
+      {/* 清除选择按钮 */}
+      <Button
+        size="small"
+        color="inherit"
+        startIcon={<ClearIcon />}
+        onClick={onClearSelection}
+        disabled={!hasSelection}
+        sx={{ whiteSpace: 'nowrap' }}
+      >
+        取消
+      </Button>
 
-          <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={onDelete} sx={{ whiteSpace: 'nowrap' }}>
-            批量删除
-          </Button>
-          <Button size="small" color="primary" variant="outlined" onClick={onGroup} sx={{ whiteSpace: 'nowrap' }}>
-            修改分组
-          </Button>
-          <Button size="small" color="info" variant="outlined" onClick={onSource} sx={{ whiteSpace: 'nowrap' }}>
-            修改来源
-          </Button>
-          <Button size="small" color="secondary" variant="outlined" onClick={onCountry} sx={{ whiteSpace: 'nowrap' }}>
-            修改国家
-          </Button>
-          <Button size="small" color="primary" variant="outlined" onClick={onDialerProxy} sx={{ whiteSpace: 'nowrap' }}>
-            修改前置代理
-          </Button>
-          <Button size="small" color="secondary" variant="outlined" onClick={onTag} sx={{ whiteSpace: 'nowrap' }}>
-            设置标签
-          </Button>
-          <Button size="small" color="error" variant="outlined" onClick={onRemoveTag} sx={{ whiteSpace: 'nowrap' }}>
-            删除标签
-          </Button>
-        </>
-      )}
+      <Button size="small" color="error" startIcon={<DeleteIcon />} onClick={onDelete} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        批量删除
+      </Button>
+      <Button size="small" color="primary" variant="outlined" onClick={onGroup} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        修改分组
+      </Button>
+      <Button size="small" color="info" variant="outlined" onClick={onSource} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        修改来源
+      </Button>
+      <Button size="small" color="secondary" variant="outlined" onClick={onCountry} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        修改国家
+      </Button>
+      <Button
+        size="small"
+        color="primary"
+        variant="outlined"
+        onClick={onDialerProxy}
+        disabled={!hasSelection}
+        sx={{ whiteSpace: 'nowrap' }}
+      >
+        修改前置代理
+      </Button>
+      <Button size="small" color="secondary" variant="outlined" onClick={onTag} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        设置标签
+      </Button>
+      <Button size="small" color="error" variant="outlined" onClick={onRemoveTag} disabled={!hasSelection} sx={{ whiteSpace: 'nowrap' }}>
+        删除标签
+      </Button>
     </Stack>
   );
 }

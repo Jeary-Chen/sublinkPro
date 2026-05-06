@@ -27,13 +27,21 @@ const (
 	clientResponseSyntheticFallback
 )
 
+type fallbackIdentityPolicy int
+
+const (
+	fallbackIdentityOriginalEnvelope fallbackIdentityPolicy = iota
+	fallbackIdentitySyntheticEnvelope
+)
+
 type preparedClientResponse struct {
-	ClientType   string
-	Mode         clientResponseMode
-	Subscription models.Subcription
-	SubName      string
-	ShareID      int
-	FallbackName string
+	ClientType       string
+	Mode             clientResponseMode
+	Subscription     models.Subcription
+	SubName          string
+	ShareID          int
+	FallbackName     string
+	FallbackIdentity fallbackIdentityPolicy
 }
 
 type resolvedPreparedResponse struct {
@@ -213,11 +221,12 @@ func buildSyntheticFallbackResponse(clientType, message string) preparedClientRe
 		RefreshUsageOnRequest: false,
 	}
 	return preparedClientResponse{
-		ClientType:   clientType,
-		Mode:         clientResponseSyntheticFallback,
-		Subscription: sub,
-		SubName:      sub.Name,
-		FallbackName: message,
+		ClientType:       clientType,
+		Mode:             clientResponseSyntheticFallback,
+		Subscription:     sub,
+		SubName:          sub.Name,
+		FallbackName:     message,
+		FallbackIdentity: fallbackIdentitySyntheticEnvelope,
 	}
 }
 
@@ -296,11 +305,12 @@ func buildPreparedResponseFromSubscription(sub models.Subcription, clientType st
 		return preparedClientResponse{}, false
 	}
 	return preparedClientResponse{
-		ClientType:   clientType,
-		Mode:         clientResponseNormal,
-		Subscription: preparedSub,
-		SubName:      preparedSub.Name,
-		ShareID:      shareID,
+		ClientType:       clientType,
+		Mode:             clientResponseNormal,
+		Subscription:     preparedSub,
+		SubName:          preparedSub.Name,
+		ShareID:          shareID,
+		FallbackIdentity: fallbackIdentityOriginalEnvelope,
 	}, true
 }
 
@@ -311,6 +321,7 @@ func buildPreparedExpiredShareResponse(sub models.Subcription, clientType, messa
 	}
 	prepared.Mode = clientResponseSyntheticFallback
 	prepared.FallbackName = message
+	prepared.FallbackIdentity = fallbackIdentityOriginalEnvelope
 	return prepared, true
 }
 
@@ -322,7 +333,7 @@ func applyPreparedResponseMode(prepared preparedClientResponse) resolvedPrepared
 	case clientResponseSyntheticFallback:
 		sub.Nodes = buildSyntheticErrorNodes(prepared.FallbackName)
 		sub.RefreshUsageOnRequest = false
-		if prepared.ShareID == 0 {
+		if prepared.FallbackIdentity == fallbackIdentitySyntheticEnvelope {
 			sub.Name = prepared.FallbackName
 			subName = prepared.FallbackName
 		}
@@ -332,6 +343,42 @@ func applyPreparedResponseMode(prepared preparedClientResponse) resolvedPrepared
 		Subscription: sub,
 		SubName:      subName,
 	}
+}
+
+func buildRenamedNodeLink(node models.Node, processedLinkName, nodeNameRule, link string, index int) string {
+	if nodeNameRule == "" {
+		return link
+	}
+	newName := utils.RenameNode(nodeNameRule, models.BuildNodeRenameInfo(node, processedLinkName, protocol.GetProtocolFromLink(link), index))
+	return utils.RenameNodeLink(link, newName)
+}
+
+func buildSurgeRenameInfo(node models.Node, processedLinkName, link string, index int) utils.NodeInfo {
+	return utils.NodeInfo{
+		Name:          node.Name,
+		LinkName:      processedLinkName,
+		LinkCountry:   node.LinkCountry,
+		Speed:         node.Speed,
+		SpeedStatus:   node.SpeedStatus,
+		DelayTime:     node.DelayTime,
+		DelayStatus:   node.DelayStatus,
+		Group:         node.Group,
+		Source:        node.Source,
+		Index:         index,
+		Protocol:      protocol.GetProtocolFromLink(link),
+		Tags:          node.Tags,
+		IsBroadcast:   node.IsBroadcast,
+		IsResidential: node.IsResidential,
+		FraudScore:    node.FraudScore,
+	}
+}
+
+func buildSurgeRenamedNodeLink(node models.Node, processedLinkName, nodeNameRule, link string, index int) string {
+	if nodeNameRule == "" {
+		return link
+	}
+	newName := utils.RenameNode(nodeNameRule, buildSurgeRenameInfo(node, processedLinkName, link, index))
+	return utils.RenameNodeLink(link, newName)
 }
 
 func prepareRendererResponse(c *gin.Context, prepared preparedClientResponse) (resolvedPreparedResponse, bool) {
@@ -380,11 +427,7 @@ func renderPreparedV2ray(c *gin.Context, prepared preparedClientResponse) {
 		// 应用预处理规则到 LinkName
 		processedLinkName := utils.PreprocessNodeName(sub.NodeNamePreprocess, v.LinkName)
 		// 应用重命名规则
-		nodeLink := v.Link
-		if sub.NodeNameRule != "" {
-			newName := utils.RenameNode(sub.NodeNameRule, models.BuildNodeRenameInfo(v, processedLinkName, protocol.GetProtocolFromLink(v.Link), idx+1))
-			nodeLink = utils.RenameNodeLink(v.Link, newName)
-		}
+		nodeLink := buildRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, v.Link, idx+1)
 		switch {
 		// 如果包含多条节点
 		case strings.Contains(v.Link, ","):
@@ -392,8 +435,7 @@ func renderPreparedV2ray(c *gin.Context, prepared preparedClientResponse) {
 			// 对每个链接应用重命名
 			if sub.NodeNameRule != "" {
 				for i, link := range links {
-					newName := utils.RenameNode(sub.NodeNameRule, models.BuildNodeRenameInfo(v, processedLinkName, protocol.GetProtocolFromLink(link), idx+1))
-					links[i] = utils.RenameNodeLink(link, newName)
+					links[i] = buildRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, link, idx+1)
 				}
 			}
 			baselist += strings.Join(links, "\n") + "\n"
@@ -515,11 +557,7 @@ func renderPreparedClash(c *gin.Context, prepared preparedClientResponse) {
 		// 应用预处理规则到 LinkName
 		processedLinkName := utils.PreprocessNodeName(sub.NodeNamePreprocess, v.LinkName)
 		// 应用重命名规则
-		nodeLink := v.Link
-		if sub.NodeNameRule != "" {
-			newName := utils.RenameNode(sub.NodeNameRule, models.BuildNodeRenameInfo(v, processedLinkName, protocol.GetProtocolFromLink(v.Link), idx+1))
-			nodeLink = utils.RenameNodeLink(v.Link, newName)
-		}
+		nodeLink := buildRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, v.Link, idx+1)
 
 		// 计算 dialer-proxy（链式代理规则）
 		dialerProxy := strings.TrimSpace(v.DialerProxyName)
@@ -540,11 +578,7 @@ func renderPreparedClash(c *gin.Context, prepared preparedClientResponse) {
 		case strings.Contains(v.Link, ","):
 			links := strings.Split(v.Link, ",")
 			for i, link := range links {
-				renamedLink := link
-				if sub.NodeNameRule != "" {
-					newName := utils.RenameNode(sub.NodeNameRule, models.BuildNodeRenameInfo(v, processedLinkName, protocol.GetProtocolFromLink(link), idx+1))
-					renamedLink = utils.RenameNodeLink(link, newName)
-				}
+				renamedLink := buildRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, link, idx+1)
 				links[i] = renamedLink
 				urls = append(urls, protocol.Urls{
 					Url:             renamedLink,
@@ -662,52 +696,13 @@ func renderPreparedSurge(c *gin.Context, prepared preparedClientResponse) {
 		// 应用预处理规则到 LinkName
 		processedLinkName := utils.PreprocessNodeName(sub.NodeNamePreprocess, v.LinkName)
 		// 应用重命名规则
-		nodeLink := v.Link
-		if sub.NodeNameRule != "" {
-			newName := utils.RenameNode(sub.NodeNameRule, utils.NodeInfo{
-				Name:          v.Name,
-				LinkName:      processedLinkName,
-				LinkCountry:   v.LinkCountry,
-				Speed:         v.Speed,
-				SpeedStatus:   v.SpeedStatus,
-				DelayTime:     v.DelayTime,
-				DelayStatus:   v.DelayStatus,
-				Group:         v.Group,
-				Source:        v.Source,
-				Index:         idx + 1,
-				Protocol:      protocol.GetProtocolFromLink(v.Link),
-				Tags:          v.Tags,
-				IsBroadcast:   v.IsBroadcast,
-				IsResidential: v.IsResidential,
-				FraudScore:    v.FraudScore,
-			})
-			nodeLink = utils.RenameNodeLink(v.Link, newName)
-		}
+		nodeLink := buildSurgeRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, v.Link, idx+1)
 		switch {
 		// 如果包含多条节点
 		case strings.Contains(v.Link, ","):
 			links := strings.Split(v.Link, ",")
 			for i, link := range links {
-				if sub.NodeNameRule != "" {
-					newName := utils.RenameNode(sub.NodeNameRule, utils.NodeInfo{
-						Name:          v.Name,
-						LinkName:      processedLinkName,
-						LinkCountry:   v.LinkCountry,
-						Speed:         v.Speed,
-						SpeedStatus:   v.SpeedStatus,
-						DelayTime:     v.DelayTime,
-						DelayStatus:   v.DelayStatus,
-						Group:         v.Group,
-						Source:        v.Source,
-						Index:         idx + 1,
-						Protocol:      protocol.GetProtocolFromLink(link),
-						Tags:          v.Tags,
-						IsBroadcast:   v.IsBroadcast,
-						IsResidential: v.IsResidential,
-						FraudScore:    v.FraudScore,
-					})
-					links[i] = utils.RenameNodeLink(link, newName)
-				}
+				links[i] = buildSurgeRenamedNodeLink(v, processedLinkName, sub.NodeNameRule, link, idx+1)
 			}
 			urls = append(urls, links...)
 			continue

@@ -412,8 +412,8 @@ func scheduleClashToNodeLinks(id int, proxys []protocol.Proxy, subName string, r
 		}
 		//节点重命名
 		proxys = applyAirportNodeRename(airport, proxys)
-		// 节点名称唯一化（添加机场标识前缀，防止多机场节点重名）
-		proxys = applyAirportNodeUniquify(airport, proxys)
+		// 节点名称唯一化（先添加机场标识前缀，机场内编号在后续去重判断完成后再应用）
+		proxys = applyAirportNodeNamePrefix(airport, proxys)
 	}
 
 	// 1. 获取该订阅当前在数据库中的所有节点
@@ -471,6 +471,9 @@ func scheduleClashToNodeLinks(id int, proxys []protocol.Proxy, subName string, r
 			infoNodeHashes[ch] = true
 		}
 	}
+
+	// 在基于原始名称完成同 hash 分类后，再对同机场内重名节点追加顺序编号，避免影响内容哈希去重语义。
+	proxys = applyAirportIntraNodeUniquify(airport, proxys)
 
 	// 创建现有节点的映射表（以 ContentHash 为键，用于同机场去重判断与更新）
 	existingNodeByContentHash := make(map[string]models.Node)
@@ -996,25 +999,49 @@ func GenerateProxyLink(proxy protocol.Proxy) string {
 	return link
 }
 
-// applyAirportNodeUniquify 应用机场节点名称唯一化
+// applyAirportNodeNamePrefix 应用机场节点名称前缀唯一化
 // 在节点名称前添加机场标识前缀，防止多机场间节点名称重复
 // 同一机场同一节点每次生成的名字保持一致（使用机场ID生成稳定前缀）
-func applyAirportNodeUniquify(airport *models.Airport, proxys []protocol.Proxy) []protocol.Proxy {
+func applyAirportNodeNamePrefix(airport *models.Airport, proxys []protocol.Proxy) []protocol.Proxy {
 	if airport == nil || !airport.NodeNameUniquify {
 		return proxys
 	}
 
 	// 生成前缀: 使用用户自定义前缀 或 默认的 [A{id}] 格式
-	var prefix string
-	if airport.NodeNamePrefix != "" {
-		prefix = airport.NodeNamePrefix
-	} else {
+	prefix := strings.TrimSpace(airport.NodeNamePrefix)
+	if prefix == "" {
 		prefix = fmt.Sprintf("[A%d]", airport.ID)
 	}
 
 	// 为每个节点名称添加前缀
 	for i := range proxys {
 		proxys[i].Name = prefix + proxys[i].Name
+	}
+
+	return proxys
+}
+
+// applyAirportIntraNodeUniquify 应用机场内节点名称唯一化
+// 对同一机场拉取结果中重复的节点名称追加顺序编号，避免同机场内出现重名节点
+func applyAirportIntraNodeUniquify(airport *models.Airport, proxys []protocol.Proxy) []protocol.Proxy {
+	if airport == nil || !airport.NodeNameIntraUniquify {
+		return proxys
+	}
+
+	nameTotals := make(map[string]int, len(proxys))
+	for _, proxy := range proxys {
+		nameTotals[proxy.Name]++
+	}
+
+	nameIndexes := make(map[string]int, len(nameTotals))
+	for i := range proxys {
+		name := proxys[i].Name
+		if nameTotals[name] <= 1 {
+			continue
+		}
+
+		nameIndexes[name]++
+		proxys[i].Name = fmt.Sprintf("%s-%d", name, nameIndexes[name])
 	}
 
 	return proxys

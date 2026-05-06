@@ -182,27 +182,28 @@ func AirportAdd(c *gin.Context) {
 	}
 
 	airport := models.Airport{
-		Name:               req.Name,
-		URL:                req.URL,
-		CronExpr:           req.CronExpr,
-		Enabled:            req.Enabled,
-		Group:              req.Group,
-		DownloadWithProxy:  req.DownloadWithProxy,
-		ProxyLink:          req.ProxyLink,
-		UserAgent:          req.UserAgent,
-		RequestHeaders:     requestHeaders,
-		FetchUsageInfo:     req.FetchUsageInfo,
-		SkipTLSVerify:      req.SkipTLSVerify,
-		Remark:             req.Remark,
-		Logo:               req.Logo,
-		NodeNameWhitelist:  req.NodeNameWhitelist,
-		NodeNameBlacklist:  req.NodeNameBlacklist,
-		ProtocolWhitelist:  req.ProtocolWhitelist,
-		ProtocolBlacklist:  req.ProtocolBlacklist,
-		NodeNamePreprocess: req.NodeNamePreprocess,
-		DeduplicationRule:  req.DeduplicationRule,
-		NodeNameUniquify:   req.NodeNameUniquify,
-		NodeNamePrefix:     req.NodeNamePrefix,
+		Name:                  req.Name,
+		URL:                   req.URL,
+		CronExpr:              req.CronExpr,
+		Enabled:               req.Enabled,
+		Group:                 req.Group,
+		DownloadWithProxy:     req.DownloadWithProxy,
+		ProxyLink:             req.ProxyLink,
+		UserAgent:             req.UserAgent,
+		RequestHeaders:        requestHeaders,
+		FetchUsageInfo:        req.FetchUsageInfo,
+		SkipTLSVerify:         req.SkipTLSVerify,
+		Remark:                req.Remark,
+		Logo:                  req.Logo,
+		NodeNameWhitelist:     req.NodeNameWhitelist,
+		NodeNameBlacklist:     req.NodeNameBlacklist,
+		ProtocolWhitelist:     req.ProtocolWhitelist,
+		ProtocolBlacklist:     req.ProtocolBlacklist,
+		NodeNamePreprocess:    req.NodeNamePreprocess,
+		DeduplicationRule:     req.DeduplicationRule,
+		NodeNameUniquify:      req.NodeNameUniquify,
+		NodeNamePrefix:        req.NodeNamePrefix,
+		NodeNameIntraUniquify: req.NodeNameIntraUniquify,
 	}
 
 	// 检查是否重复
@@ -297,6 +298,7 @@ func AirportUpdate(c *gin.Context) {
 	existing.DeduplicationRule = req.DeduplicationRule
 	existing.NodeNameUniquify = req.NodeNameUniquify
 	existing.NodeNamePrefix = req.NodeNamePrefix
+	existing.NodeNameIntraUniquify = req.NodeNameIntraUniquify
 
 	if err := existing.Update(); err != nil {
 		utils.FailWithMsg(c, "更新失败: "+err.Error())

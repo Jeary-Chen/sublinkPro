@@ -1,7 +1,9 @@
 package node
 
 import (
+	"reflect"
 	"strings"
+	"sublink/models"
 	"sublink/node/protocol"
 	"testing"
 )
@@ -103,5 +105,62 @@ func TestGenerateProxyLinkDoesNotReconstructDisabledECH(t *testing.T) {
 	}
 	if strings.Contains(link, "ech=") {
 		t.Fatalf("禁用 ECH 时不应重建顶层 ech, 实际: %s", link)
+	}
+}
+
+func TestApplyAirportNodeNamePrefixAddsPrefixOnly(t *testing.T) {
+	airport := &models.Airport{
+		ID:               27,
+		NodeNameUniquify: true,
+	}
+	proxys := []protocol.Proxy{{Name: "香港节点-01"}, {Name: "香港节点-02"}}
+
+	result := applyAirportNodeNamePrefix(airport, proxys)
+	got := []string{result[0].Name, result[1].Name}
+	want := []string{"[A27]香港节点-01", "[A27]香港节点-02"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("前缀唯一化结果不匹配: got=%v want=%v", got, want)
+	}
+}
+
+func TestApplyAirportNodeNamePrefixFallsBackForWhitespacePrefix(t *testing.T) {
+	airport := &models.Airport{
+		ID:               27,
+		NodeNameUniquify: true,
+		NodeNamePrefix:   "   ",
+	}
+	proxys := []protocol.Proxy{{Name: "香港节点-01"}}
+
+	result := applyAirportNodeNamePrefix(airport, proxys)
+	if result[0].Name != "[A27]香港节点-01" {
+		t.Fatalf("空白前缀应回退到默认前缀，实际: %s", result[0].Name)
+	}
+}
+
+func TestApplyAirportIntraNodeUniquifyNumbersDuplicateNamesWithinAirport(t *testing.T) {
+	airport := &models.Airport{
+		NodeNameIntraUniquify: true,
+	}
+	proxys := []protocol.Proxy{{Name: "[A27]香港节点-01"}, {Name: "[A27]香港节点-01"}, {Name: "[A27]新加坡节点-01"}, {Name: "[A27]香港节点-01"}}
+
+	result := applyAirportIntraNodeUniquify(airport, proxys)
+	got := []string{result[0].Name, result[1].Name, result[2].Name, result[3].Name}
+	want := []string{"[A27]香港节点-01-1", "[A27]香港节点-01-2", "[A27]新加坡节点-01", "[A27]香港节点-01-3"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("机场内编号唯一化结果不匹配: got=%v want=%v", got, want)
+	}
+}
+
+func TestApplyAirportIntraNodeUniquifyCanNumberWithoutPrefix(t *testing.T) {
+	airport := &models.Airport{
+		NodeNameIntraUniquify: true,
+	}
+	proxys := []protocol.Proxy{{Name: "香港节点-01"}, {Name: "香港节点-01"}, {Name: "日本节点-01"}}
+
+	result := applyAirportIntraNodeUniquify(airport, proxys)
+	got := []string{result[0].Name, result[1].Name, result[2].Name}
+	want := []string{"香港节点-01-1", "香港节点-01-2", "日本节点-01"}
+	if !reflect.DeepEqual(got, want) {
+		t.Fatalf("无前缀时机场内编号结果不匹配: got=%v want=%v", got, want)
 	}
 }

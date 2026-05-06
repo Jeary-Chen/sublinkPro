@@ -100,8 +100,9 @@ type Airport struct {
 	// 节点去重规则（拉取时生效）
 	DeduplicationRule string `json:"deduplicationRule"` // 去重规则配置(JSON)
 	// 节点名称唯一化（拉取时生效）
-	NodeNameUniquify bool   `gorm:"default:false" json:"nodeNameUniquify"` // 是否开启节点名称唯一化
-	NodeNamePrefix   string `json:"nodeNamePrefix"`                        // 自定义名称前缀（可选）
+	NodeNameUniquify      bool   `gorm:"default:false" json:"nodeNameUniquify"`      // 是否开启节点名称唯一化
+	NodeNamePrefix        string `json:"nodeNamePrefix"`                             // 自定义名称前缀（可选）
+	NodeNameIntraUniquify bool   `gorm:"default:false" json:"nodeNameIntraUniquify"` // 是否开启机场内节点名称唯一化
 }
 
 // TableName 指定表名
@@ -151,7 +152,7 @@ func (a *Airport) Update() error {
 		"RequestHeaders",
 		"FetchUsageInfo", "SkipTLSVerify", "Remark", "Logo",
 		"NodeNameWhitelist", "NodeNameBlacklist", "ProtocolWhitelist", "ProtocolBlacklist", "NodeNamePreprocess",
-		"DeduplicationRule", "NodeNameUniquify", "NodeNamePrefix",
+		"DeduplicationRule", "NodeNameUniquify", "NodeNamePrefix", "NodeNameIntraUniquify",
 	).Updates(a).Error
 	if err != nil {
 		return err

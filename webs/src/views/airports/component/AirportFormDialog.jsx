@@ -512,8 +512,16 @@ export default function AirportFormDialog({
               <NodeNameUniquifyConfig
                 enabled={airportForm.nodeNameUniquify || false}
                 prefix={airportForm.nodeNamePrefix || ''}
+                intraUniquify={airportForm.nodeNameIntraUniquify || false}
                 airportId={airportForm.id || 0}
-                onChange={({ enabled, prefix }) => setAirportForm({ ...airportForm, nodeNameUniquify: enabled, nodeNamePrefix: prefix })}
+                onChange={({ enabled, prefix, intraUniquify }) =>
+                  setAirportForm({
+                    ...airportForm,
+                    nodeNameUniquify: enabled,
+                    nodeNamePrefix: prefix,
+                    nodeNameIntraUniquify: intraUniquify
+                  })
+                }
               />
             </Stack>
           </AirportDialogSection>
@@ -567,7 +575,8 @@ AirportFormDialog.propTypes = {
     nodeNamePreprocess: PropTypes.string,
     deduplicationRule: PropTypes.string,
     nodeNameUniquify: PropTypes.bool,
-    nodeNamePrefix: PropTypes.string
+    nodeNamePrefix: PropTypes.string,
+    nodeNameIntraUniquify: PropTypes.bool
   }).isRequired,
   setAirportForm: PropTypes.func.isRequired,
   groupOptions: PropTypes.array.isRequired,

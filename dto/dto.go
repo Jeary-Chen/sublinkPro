@@ -53,8 +53,9 @@ type AirportRequest struct {
 	// 去重规则
 	DeduplicationRule string `json:"deduplicationRule"` // 去重规则配置(JSON)
 	// 节点名称唯一化
-	NodeNameUniquify bool   `json:"nodeNameUniquify"` // 是否开启节点名称唯一化
-	NodeNamePrefix   string `json:"nodeNamePrefix"`   // 自定义名称前缀（可选）
+	NodeNameUniquify      bool   `json:"nodeNameUniquify"`      // 是否开启节点名称唯一化
+	NodeNamePrefix        string `json:"nodeNamePrefix"`        // 自定义名称前缀（可选）
+	NodeNameIntraUniquify bool   `json:"nodeNameIntraUniquify"` // 是否开启机场内节点名称唯一化
 }
 
 // AirportBatchUpdateRequest 机场批量更新请求体结构

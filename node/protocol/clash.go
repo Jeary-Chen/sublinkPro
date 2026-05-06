@@ -110,6 +110,7 @@ type Proxy struct {
 	H2_opts         map[string]interface{} `yaml:"h2-opts,omitempty"`         // HTTP/2 传输层选项
 	Http_opts       map[string]interface{} `yaml:"http-opts,omitempty"`       // HTTP 传输层选项
 	XHTTP_opts      map[string]interface{} `yaml:"xhttp-opts,omitempty"`
+	ECH_opts        map[string]interface{} `yaml:"ech-opts,omitempty"`
 }
 
 type ProxyGroup struct {

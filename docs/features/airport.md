@@ -14,12 +14,14 @@ SublinkPro 提供了完善的机场订阅管理功能，不仅能将订阅转换
 | **🚀 立即更新机制** | 支持一键「立即拉取」，配合实时回调机制，无需刷新页面即可看到最新的流量数据和节点列表 |
 | **🤖 Bot 集成管理** | 通过 Telegram Bot 可随时查询各订阅的剩余流量、到期时间，并支持远程触发更新任务 |
 
-### VLESS XHTTP 兼容说明
+### VLESS / XHTTP 兼容说明
 
 - 机场订阅导入现已支持 `vless://` 链接中的 `type=xhttp`。
 - 当上游订阅是 Clash / mihomo YAML 且节点为 `type: vless`、`network: xhttp` 时，系统会识别 `xhttp-opts` 并回写为 VLESS URL。
-- 当前已支持的 URL 顶层字段包括：`type`、`path`、`host`、`mode`、`extra`。
+- 当前已支持的 URL 顶层字段包括：`type`、`path`、`host`、`mode`、`extra`、`ech`。
 - `extra` 中已支持映射到 mihomo 的字段包括：`headers`、`noGRPCHeader`、`xPaddingBytes`、`downloadSettings` 及其已知子字段。
+- 顶层 `ech` 会优先映射到 mihomo 顶层 `ech-opts`：当值是固定 base64 ECHConfig 时写入 `config`，当值是 Xray 的 DNS / URI 风格时会按 mihomo 可表达的范围做最佳努力映射。
+- `extra.downloadSettings.echOpts` 仍只映射到 mihomo `xhttp-opts.download-settings.ech-opts`，不会和顶层 `ech-opts` 混写。
 - `xmux`、`sessionPlacement` 等在 Xray 侧存在但 mihomo 当前没有公开承载字段的扩展项，会被视为未支持，不会静默降级成 `http`、`h2` 或 `grpc`。
 
 ---

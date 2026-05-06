@@ -20,6 +20,7 @@ func init() {
 		FieldMeta{Name: "Query.Flow", Label: "Flow", Type: "string", Group: "auth", Advanced: true},
 		FieldMeta{Name: "Query.Security", Label: "安全类型", Type: "string", Group: "tls", Options: []string{"none", "tls", "reality"}},
 		FieldMeta{Name: "Query.Sni", Label: "SNI", Type: "string", Group: "tls", Placeholder: "server.example.com"},
+		FieldMeta{Name: "Query.Ech", Label: "ECH", Type: "string", Group: "tls", Advanced: true, Placeholder: "example.com+https://1.1.1.1/dns-query"},
 		FieldMeta{Name: "Query.Alpn", Label: "ALPN", Type: "string", Group: "tls", Multiline: true, Advanced: true},
 		FieldMeta{Name: "Query.Fp", Label: "指纹", Type: "string", Group: "tls", Advanced: true},
 		FieldMeta{Name: "Query.Sid", Label: "Short ID", Type: "string", Group: "tls", Advanced: true},
@@ -56,6 +57,7 @@ type VLESSQuery struct {
 	Security      string   `json:"security"`
 	Alpn          []string `json:"alpn"`
 	Sni           string   `json:"sni"`
+	Ech           string   `json:"ech,omitempty"`
 	Fp            string   `json:"fp"`
 	Sid           string   `json:"sid"`
 	Pbk           string   `json:"pbk"`
@@ -150,7 +152,8 @@ func buildVLESSProxy(link Urls, config OutputConfig) (Proxy, error) {
 	case "xhttp":
 		finalXHTTPOpts = xhttpOpts
 	}
-	return Proxy{Name: vless.Name, Type: "vless", Server: vless.Server, Port: FlexPort(utils.GetPortInt(vless.Port)), Servername: vless.Query.Sni, Uuid: vless.Uuid, Client_fingerprint: vless.Query.Fp, Network: vless.Query.Type, Flow: vless.Query.Flow, Alpn: vless.Query.Alpn, Packet_encoding: vless.Query.PacketEncoding, Ws_opts: finalWsOpts, H2_opts: finalH2Opts, Http_opts: finalHttpOpts, Grpc_opts: finalGrpcOpts, XHTTP_opts: finalXHTTPOpts, Reality_opts: realityOpts, Udp: config.Udp, Skip_cert_verify: skipCert, Tls: tls, Dialer_proxy: link.DialerProxyName}, nil
+	echOpts := buildVLESSECHOpts(vless.Query.Ech)
+	return Proxy{Name: vless.Name, Type: "vless", Server: vless.Server, Port: FlexPort(utils.GetPortInt(vless.Port)), Servername: vless.Query.Sni, Uuid: vless.Uuid, Client_fingerprint: vless.Query.Fp, Network: vless.Query.Type, Flow: vless.Query.Flow, Alpn: vless.Query.Alpn, Packet_encoding: vless.Query.PacketEncoding, Ws_opts: finalWsOpts, H2_opts: finalH2Opts, Http_opts: finalHttpOpts, Grpc_opts: finalGrpcOpts, XHTTP_opts: finalXHTTPOpts, ECH_opts: echOpts, Reality_opts: realityOpts, Udp: config.Udp, Skip_cert_verify: skipCert, Tls: tls, Dialer_proxy: link.DialerProxyName}, nil
 }
 
 // EncodeVLESSURL 将 VLESS 结构编码为 v2ray 常见的明文 URL 形式。
@@ -170,6 +173,7 @@ func EncodeVLESSURL(v VLESS) string {
 
 	// TLS相关参数
 	q.Set("sni", v.Query.Sni)
+	q.Set("ech", v.Query.Ech)
 	q.Set("fp", v.Query.Fp)
 	if len(v.Query.Alpn) > 0 {
 		q.Set("alpn", strings.Join(v.Query.Alpn, ","))
@@ -280,6 +284,7 @@ func DecodeVLESSURL(s string) (VLESS, error) {
 	sid := u.Query().Get("sid")
 	fp := u.Query().Get("fp")
 	sni := u.Query().Get("sni")
+	ech := u.Query().Get("ech")
 	path := u.Query().Get("path")
 	host := u.Query().Get("host")
 	serviceName := u.Query().Get("serviceName")
@@ -346,6 +351,7 @@ func DecodeVLESSURL(s string) (VLESS, error) {
 		fmt.Println("fp:", fp)
 		fmt.Println("alpn:", alpn)
 		fmt.Println("sni:", sni)
+		fmt.Println("ech:", ech)
 		fmt.Println("path:", path)
 		fmt.Println("host:", host)
 		fmt.Println("serviceName:", serviceName)
@@ -367,6 +373,7 @@ func DecodeVLESSURL(s string) (VLESS, error) {
 			Security:            security,
 			Alpn:                alpn,
 			Sni:                 sni,
+			Ech:                 ech,
 			Fp:                  fp,
 			Sid:                 sid,
 			Pbk:                 pbk,
@@ -400,6 +407,7 @@ func ConvertProxyToVless(proxy Proxy) VLESS {
 		Port:   int(proxy.Port),
 		Query: VLESSQuery{
 			Sni:            proxy.Servername,
+			Ech:            buildVLESSECHQuery(proxy.ECH_opts),
 			Fp:             proxy.Client_fingerprint,
 			Flow:           proxy.Flow,
 			Alpn:           proxy.Alpn,
@@ -552,6 +560,39 @@ func parseVLESSXHTTPExtra(extra string) map[string]interface{} {
 	return normalizeVLESSXHTTPExtra(parsed)
 }
 
+func buildVLESSECHOpts(ech string) map[string]interface{} {
+	ech = strings.TrimSpace(ech)
+	if ech == "" {
+		return nil
+	}
+	opts := map[string]interface{}{"enable": true}
+	if strings.Contains(ech, "://") {
+		parts := strings.SplitN(ech, "+", 2)
+		if len(parts) == 2 && strings.TrimSpace(parts[0]) != "" && !strings.Contains(parts[0], "://") {
+			opts["query-server-name"] = strings.TrimSpace(parts[0])
+		}
+		DeleteOpts(opts)
+		if len(opts) == 1 {
+			return opts
+		}
+		return opts
+	}
+	opts["config"] = ech
+	DeleteOpts(opts)
+	if len(opts) == 0 {
+		return nil
+	}
+	return opts
+}
+
+func buildVLESSECHQuery(echOpts map[string]interface{}) string {
+	if len(echOpts) == 0 {
+		return ""
+	}
+	config, _ := echOpts["config"].(string)
+	return strings.TrimSpace(config)
+}
+
 func normalizeVLESSXHTTPExtra(extra map[string]interface{}) map[string]interface{} {
 	if len(extra) == 0 {
 		return nil
@@ -592,7 +633,11 @@ func normalizeVLESSXHTTPDownloadSettings(settings map[string]interface{}) map[st
 		case "xPaddingBytes":
 			normalized["x-padding-bytes"] = value
 		case "echOpts":
-			normalized["ech-opts"] = value
+			if echOpts, ok := value.(map[string]interface{}); ok && len(echOpts) > 0 {
+				if normalizedECHOpts := normalizeVLESSECHOptsMap(echOpts); len(normalizedECHOpts) > 0 {
+					normalized["ech-opts"] = normalizedECHOpts
+				}
+			}
 		case "realityOpts":
 			normalized["reality-opts"] = value
 		case "skipCertVerify":
@@ -657,7 +702,11 @@ func buildVLESSXHTTPExtraDownloadSettings(settings map[string]interface{}) map[s
 		case "x-padding-bytes":
 			extraSettings["xPaddingBytes"] = value
 		case "ech-opts":
-			extraSettings["echOpts"] = value
+			if echOpts, ok := value.(map[string]interface{}); ok && len(echOpts) > 0 {
+				if extraECHOpts := buildVLESSECHExtraOptsMap(echOpts); len(extraECHOpts) > 0 {
+					extraSettings["echOpts"] = extraECHOpts
+				}
+			}
 		case "reality-opts":
 			extraSettings["realityOpts"] = value
 		case "skip-cert-verify":
@@ -672,6 +721,46 @@ func buildVLESSXHTTPExtraDownloadSettings(settings map[string]interface{}) map[s
 		return nil
 	}
 	return extraSettings
+}
+
+func normalizeVLESSECHOptsMap(echOpts map[string]interface{}) map[string]interface{} {
+	if len(echOpts) == 0 {
+		return nil
+	}
+	normalized := map[string]interface{}{}
+	for key, value := range echOpts {
+		switch key {
+		case "enable", "config":
+			normalized[key] = value
+		case "queryServerName", "query-server-name":
+			normalized["query-server-name"] = value
+		}
+	}
+	DeleteOpts(normalized)
+	if len(normalized) == 0 {
+		return nil
+	}
+	return normalized
+}
+
+func buildVLESSECHExtraOptsMap(echOpts map[string]interface{}) map[string]interface{} {
+	if len(echOpts) == 0 {
+		return nil
+	}
+	extraECHOpts := map[string]interface{}{}
+	for key, value := range echOpts {
+		switch key {
+		case "enable", "config":
+			extraECHOpts[key] = value
+		case "query-server-name", "queryServerName":
+			extraECHOpts["queryServerName"] = value
+		}
+	}
+	DeleteOpts(extraECHOpts)
+	if len(extraECHOpts) == 0 {
+		return nil
+	}
+	return extraECHOpts
 }
 
 func mergeXHTTPExtraMap(target map[string]interface{}, extra map[string]interface{}) {

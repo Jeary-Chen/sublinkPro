@@ -135,6 +135,99 @@ func TestLinkToProxy_VLESSXHTTP(t *testing.T) {
 	t.Logf("✓ VLESS XHTTP LinkToProxy 测试通过，名称: %s", proxy.Name)
 }
 
+func TestLinkToProxy_VLESSPreservesTopLevelECH(t *testing.T) {
+	vless := VLESS{
+		Name:   "测试节点-VLESS-ECH",
+		Uuid:   "12345678-1234-1234-1234-123456789abc",
+		Server: "example.com",
+		Port:   443,
+		Query: VLESSQuery{
+			Security: "tls",
+			Type:     "ws",
+			Path:     "/vless",
+			Ech:      "BASE64_ECH_CONFIG",
+		},
+	}
+
+	proxy, err := LinkToProxy(Urls{Url: EncodeVLESSURL(vless)}, OutputConfig{})
+	if err != nil {
+		t.Fatalf("LinkToProxy 失败: %v", err)
+	}
+
+	assertEqualBool(t, "ECHEnable", true, proxy.ECH_opts["enable"].(bool))
+	assertEqualString(t, "ECHConfig", vless.Query.Ech, proxy.ECH_opts["config"].(string))
+	if len(proxy.XHTTP_opts) != 0 {
+		t.Fatalf("顶层 ECH 不应被静默写入 xhttp-opts, 实际: %#v", proxy.XHTTP_opts)
+	}
+}
+
+func TestLinkToProxy_VLESSDNSStyleECHUsesBestEffortECHOpts(t *testing.T) {
+	vless := VLESS{
+		Name:   "测试节点-VLESS-ECH-DNS",
+		Uuid:   "12345678-1234-1234-1234-123456789abc",
+		Server: "example.com",
+		Port:   443,
+		Query: VLESSQuery{
+			Security: "tls",
+			Type:     "ws",
+			Path:     "/vless",
+			Ech:      "encryptedsni.com+https://dns.alidns.com/dns-query",
+		},
+	}
+
+	proxy, err := LinkToProxy(Urls{Url: EncodeVLESSURL(vless)}, OutputConfig{})
+	if err != nil {
+		t.Fatalf("LinkToProxy 失败: %v", err)
+	}
+
+	assertEqualBool(t, "ECHEnable", true, proxy.ECH_opts["enable"].(bool))
+	assertEqualString(t, "ECHQueryServerName", "encryptedsni.com", proxy.ECH_opts["query-server-name"].(string))
+	if _, exists := proxy.ECH_opts["config"]; exists {
+		t.Fatalf("DNS 风格 ech 不应被错误写入 config: %#v", proxy.ECH_opts)
+	}
+}
+
+func TestProxyYAMLMapsTopLevelECHToECHOpts(t *testing.T) {
+	proxy := Proxy{
+		Name:       "测试节点-VLESS-ECH-YAML",
+		Type:       "vless",
+		Server:     "example.com",
+		Port:       443,
+		Uuid:       "12345678-1234-1234-1234-123456789abc",
+		Network:    "xhttp",
+		Tls:        true,
+		Servername: "example.com",
+		ECH_opts: map[string]interface{}{
+			"enable": true,
+			"config": "BASE64_ECH_CONFIG",
+		},
+		XHTTP_opts: map[string]interface{}{
+			"download-settings": map[string]interface{}{
+				"ech-opts": map[string]interface{}{
+					"config":            "base64-ech",
+					"query-server-name": "dns.example.com",
+				},
+			},
+		},
+	}
+
+	data, err := yaml.Marshal(proxy)
+	if err != nil {
+		t.Fatalf("YAML 编码失败: %v", err)
+	}
+
+	encoded := string(data)
+	if !strings.Contains(encoded, "ech-opts") {
+		t.Fatalf("顶层 ECH 应映射为 ech-opts: %s", encoded)
+	}
+	if !strings.Contains(encoded, "config: BASE64_ECH_CONFIG") {
+		t.Fatalf("顶层 ECH config 应出现在 YAML 输出中: %s", encoded)
+	}
+	if !strings.Contains(encoded, "query-server-name") {
+		t.Fatalf("ech-opts 子字段应保留在 YAML 输出中: %s", encoded)
+	}
+}
+
 // TestLinkToProxy_Trojan 测试 Trojan 链接转换为 Proxy 结构体
 func TestLinkToProxy_Trojan(t *testing.T) {
 	trojan := Trojan{

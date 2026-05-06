@@ -307,6 +307,14 @@ MustRegisterProtocol(newProxyProtocolSpec(...))
   - `realityOpts` → `reality-opts`
   - `echOpts` → `ech-opts`
 
+需要特别区分两类 ECH 语义：
+
+- VLESS URL 顶层 `ech=...` 对应的是 Xray/VLESS 的 `echConfigList` 语义，不是所有写法都能与 mihomo `ech-opts` 无损互转。
+- 当 `ech` 是固定 **base64 ECHConfig** 时，会映射到顶层 `ech-opts.enable: true` + `ech-opts.config`。
+- 当 `ech` 是 Xray 的 DNS / URI 风格（如 `domain+https://...`）时，只会按 mihomo 可表达的能力做最佳努力映射：保留 `enable: true`，并在可识别时写入 `query-server-name`；其中 resolver URI 本身不会被保留。
+- `extra.downloadSettings.echOpts` 只用于 `xhttp` 的嵌套下载设置映射，会转换成 mihomo `xhttp-opts.download-settings.ech-opts`。
+- 顶层 `ech` 与 `extra.downloadSettings.echOpts` 都会映射到各自层级的 `ech-opts`，但两者不会互相合并或覆盖。
+
 实现时需要注意：
 
 - `xhttp` 只允许出现在 VLESS 上，不要复用到其他协议。

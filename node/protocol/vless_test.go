@@ -211,6 +211,34 @@ func TestVlessPacketEncoding(t *testing.T) {
 	t.Logf("✓ packet-encoding 测试通过")
 }
 
+func TestVlessTopLevelECHRoundTrip(t *testing.T) {
+	original := VLESS{
+		Name:   "ECH节点",
+		Uuid:   "12345678-1234-1234-1234-123456789abc",
+		Server: "example.com",
+		Port:   443,
+		Query: VLESSQuery{
+			Security:   "tls",
+			Encryption: "none",
+			Type:       "ws",
+			Host:       "cdn.example.com",
+			Path:       "/vless",
+			Sni:        "example.com",
+			Ech:        "encryptedsni.com+https://dns.alidns.com/dns-query",
+		},
+	}
+
+	encoded := EncodeVLESSURL(original)
+	assertContains(t, "EncodedECH", encoded, "ech=encryptedsni.com%2Bhttps%3A%2F%2Fdns.alidns.com%2Fdns-query")
+
+	decoded, err := DecodeVLESSURL(encoded)
+	if err != nil {
+		t.Fatalf("解码失败: %v", err)
+	}
+
+	assertEqualString(t, "ECH", original.Query.Ech, decoded.Query.Ech)
+}
+
 func TestVlessXHTTPURLMapping(t *testing.T) {
 	extra := map[string]interface{}{
 		"headers": map[string]interface{}{
@@ -318,6 +346,100 @@ func TestConvertProxyToVlessXHTTP(t *testing.T) {
 
 	encoded := EncodeVLESSURL(vless)
 	assertContains(t, "EncodedType", encoded, "type=xhttp")
+}
+
+func TestConvertProxyToVlessPreservesTopLevelECH(t *testing.T) {
+	proxy := Proxy{
+		Name:       "ECH节点",
+		Type:       "vless",
+		Server:     "example.com",
+		Port:       443,
+		Uuid:       "12345678-1234-1234-1234-123456789abc",
+		Network:    "ws",
+		Tls:        true,
+		Servername: "example.com",
+		ECH_opts: map[string]interface{}{
+			"enable": true,
+			"config": "BASE64_ECH_CONFIG",
+		},
+	}
+
+	vless := ConvertProxyToVless(proxy)
+	assertEqualString(t, "ECH", "BASE64_ECH_CONFIG", vless.Query.Ech)
+
+	encoded := EncodeVLESSURL(vless)
+	assertContains(t, "EncodedECH", encoded, "ech=BASE64_ECH_CONFIG")
+}
+
+func TestVlessTopLevelECHMapsToECHOpts(t *testing.T) {
+	original := VLESS{
+		Name:   "ECH双路径节点",
+		Uuid:   "12345678-1234-1234-1234-123456789abc",
+		Server: "example.com",
+		Port:   443,
+		Query: VLESSQuery{
+			Security:   "tls",
+			Encryption: "none",
+			Type:       "xhttp",
+			Host:       "cdn.example.com",
+			Path:       "/xhttp",
+			Sni:        "example.com",
+			Ech:        "BASE64_ECH_CONFIG",
+			Extra:      `{"downloadSettings":{"echOpts":{"config":"base64-ech","queryServerName":"dns.example.com"}}}`,
+		},
+	}
+
+	proxy, err := buildVLESSProxy(Urls{Url: EncodeVLESSURL(original)}, OutputConfig{})
+	if err != nil {
+		t.Fatalf("buildVLESSProxy 失败: %v", err)
+	}
+
+	assertEqualString(t, "TopLevelECHConfig", "BASE64_ECH_CONFIG", proxy.ECH_opts["config"].(string))
+	assertEqualBool(t, "TopLevelECHEnable", true, proxy.ECH_opts["enable"].(bool))
+	downloadSettings, ok := proxy.XHTTP_opts["download-settings"].(map[string]interface{})
+	if !ok {
+		t.Fatal("download-settings 不应为空")
+	}
+	xhttpECHOpts, ok := downloadSettings["ech-opts"].(map[string]interface{})
+	if !ok {
+		t.Fatal("ech-opts 不应为空")
+	}
+	assertEqualString(t, "NestedECHConfig", "base64-ech", xhttpECHOpts["config"].(string))
+	assertEqualString(t, "NestedECHQueryServerName", "dns.example.com", xhttpECHOpts["query-server-name"].(string))
+
+	restored := ConvertProxyToVless(proxy)
+	assertEqualString(t, "RestoredTopLevelECH", original.Query.Ech, restored.Query.Ech)
+	assertContains(t, "RestoredExtra", restored.Query.Extra, "\"echOpts\"")
+	assertContains(t, "RestoredExtraQueryServerName", restored.Query.Extra, "\"queryServerName\":\"dns.example.com\"")
+}
+
+func TestVlessDNSStyleECHUsesBestEffortECHOpts(t *testing.T) {
+	original := VLESS{
+		Name:   "ECH-DNS节点",
+		Uuid:   "12345678-1234-1234-1234-123456789abc",
+		Server: "example.com",
+		Port:   443,
+		Query: VLESSQuery{
+			Security: "tls",
+			Type:     "ws",
+			Sni:      "example.com",
+			Ech:      "encryptedsni.com+https://dns.alidns.com/dns-query",
+		},
+	}
+
+	proxy, err := buildVLESSProxy(Urls{Url: EncodeVLESSURL(original)}, OutputConfig{})
+	if err != nil {
+		t.Fatalf("buildVLESSProxy 失败: %v", err)
+	}
+
+	assertEqualBool(t, "ECHEnable", true, proxy.ECH_opts["enable"].(bool))
+	assertEqualString(t, "ECHQueryServerName", "encryptedsni.com", proxy.ECH_opts["query-server-name"].(string))
+	if _, exists := proxy.ECH_opts["config"]; exists {
+		t.Fatalf("DNS 风格 ech 不应被错误映射为 config: %#v", proxy.ECH_opts)
+	}
+
+	restored := ConvertProxyToVless(proxy)
+	assertEqualString(t, "RestoredTopLevelECH", "", restored.Query.Ech)
 }
 
 func TestLinkToProxy_VLESSXHTTPSkipCertFollowsSubscriptionConfig(t *testing.T) {

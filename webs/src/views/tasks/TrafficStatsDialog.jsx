@@ -234,8 +234,8 @@ export default function TrafficStatsDialog({ open, onClose, task }) {
             点击行可查看该{filterType === 'group' ? '分组' : '来源'}下的节点流量详情
           </Typography>
         )}
-        <TableContainer component={Paper} variant="outlined" sx={getTaskTableContainerSx(theme, tokens)}>
-          <Table size="small">
+        <TableContainer component={Paper} variant="outlined" sx={{ ...getTaskTableContainerSx(theme, tokens), overflowX: 'auto' }}>
+          <Table size="small" sx={{ minWidth: 560 }}>
             <TableHead sx={{ bgcolor: tokens.tableHeaderSurface }}>
               <TableRow>
                 <TableCell>{labelHeader}</TableCell>
@@ -356,8 +356,8 @@ export default function TrafficStatsDialog({ open, onClose, task }) {
         </Box>
       ) : (
         <>
-          <TableContainer component={Paper} variant="outlined" sx={getTaskTableContainerSx(theme, tokens)}>
-            <Table size="small">
+          <TableContainer component={Paper} variant="outlined" sx={{ ...getTaskTableContainerSx(theme, tokens), overflowX: 'auto' }}>
+            <Table size="small" sx={{ minWidth: 760 }}>
               <TableHead sx={{ bgcolor: tokens.tableHeaderSurface }}>
                 <TableRow>
                   <TableCell>节点名称</TableCell>

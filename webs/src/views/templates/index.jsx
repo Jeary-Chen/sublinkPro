@@ -751,10 +751,21 @@ export default function TemplateList() {
     '& .MuiInputLabel-root': {
       px: 0.5,
       backgroundColor: 'background.paper',
+      lineHeight: 1.35,
       maxWidth: 'calc(100% - 24px)'
     },
     '& .MuiInputLabel-shrink': {
+      transform: 'translate(14px, -4px) scale(0.75)',
       maxWidth: 'calc(133% - 32px)'
+    }
+  };
+
+  const outlinedLabelFixSx = {
+    '& .MuiInputLabel-shrink': {
+      px: 0.5,
+      backgroundColor: 'background.paper',
+      lineHeight: 1.35,
+      transform: 'translate(14px, -4px) scale(0.75)'
     }
   };
 
@@ -1708,8 +1719,9 @@ export default function TemplateList() {
                     value={formData.filename}
                     onChange={(e) => setFormData({ ...formData, filename: e.target.value })}
                     placeholder="例如: clash.yaml"
+                    sx={outlinedLabelFixSx}
                   />
-                  <FormControl sx={{ minWidth: 120 }}>
+                  <FormControl sx={{ minWidth: 120, ...outlinedLabelFixSx }}>
                     <InputLabel>类别</InputLabel>
                     <Select value={formData.category} label="类别" onChange={(e) => setFormData({ ...formData, category: e.target.value })}>
                       <MenuItem value="clash">Clash</MenuItem>
@@ -1720,6 +1732,7 @@ export default function TemplateList() {
                 <Autocomplete
                   freeSolo
                   options={aclPresets}
+                  sx={outlinedLabelFixSx}
                   getOptionLabel={(option) => {
                     if (typeof option === 'string') return option;
                     return option.label || option.url || '';

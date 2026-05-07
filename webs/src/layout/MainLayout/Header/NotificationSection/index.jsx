@@ -53,7 +53,7 @@ export default function NotificationSection() {
   const downMD = useMediaQuery(theme.breakpoints.down('md'));
   const { notifications, clearAllNotifications } = useAuth();
   const { isDark } = useResolvedColorScheme();
-  const bellAccent = isDark ? theme.palette.warning.main : theme.palette.warning.dark;
+  const bellAccent = theme.palette.primary.main;
   const {
     popoverSurface,
     popoverSurfaceAccent,

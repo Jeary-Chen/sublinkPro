@@ -52,12 +52,7 @@ export default function ThemeModeSection() {
   const selectedMode = mode || DEFAULT_THEME_MODE;
   const currentMeta = modeMeta[selectedMode] || modeMeta.system;
   const Icon = currentMeta.icon;
-  const paletteColor = theme.palette[currentMeta.colorKey];
-  const accentColor = isDark
-    ? paletteColor.main
-    : currentMeta.colorKey === 'warning'
-      ? theme.palette.warning.dark
-      : paletteColor.dark || paletteColor.main;
+  const accentColor = theme.palette.primary.main;
   const { popoverSurface, popoverSurfaceAccent, popoverBorder, popoverInsetShadow, mutedText } = getHeaderPopoverTokens(theme, isDark);
   const { triggerColor, triggerSurface, triggerBorder, activeColor, activeSurface, activeBorder } = getHeaderTriggerTokens(
     theme,
@@ -65,8 +60,7 @@ export default function ThemeModeSection() {
     accentColor,
     {
       lightSurfaceAlpha: 0.14,
-      lightHoverAlpha: 0.22,
-      triggerColor: accentColor
+      lightHoverAlpha: 0.22
     }
   );
 

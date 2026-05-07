@@ -31,13 +31,14 @@ export const getHeaderPopoverTokens = (theme, isDark) => {
 
 export const getHeaderTriggerTokens = (theme, isDark, accentColor, options = {}) => {
   const palette = theme.vars?.palette || theme.palette;
+  const triggerColor = options.triggerColor !== undefined ? options.triggerColor : accentColor;
+
   const {
     lightSurfaceAlpha = 0.12,
     darkSurfaceAlpha = 0.88,
     lightHoverAlpha = 0.22,
     darkHoverAlpha = 0.16,
-    triggerColor = accentColor,
-    activeColor = theme.palette.common.white
+    activeColor = isDark ? palette.common.white : triggerColor
   } = options;
 
   return {
